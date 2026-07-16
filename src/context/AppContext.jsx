@@ -10,6 +10,7 @@ export const AppProvider = ({ children }) => {
   const [goals, setGoals] = useState([]);
   const [habits, setHabits] = useState([]);
   const [tasks, setTasks] = useState([]);
+  const [monthlyReviews, setMonthlyReviews] = useState([]);
 
   // Load registered users on startup
   useEffect(() => {
@@ -31,10 +32,12 @@ export const AppProvider = ({ children }) => {
     const userGoals = localStorage.getItem(`aura_goals_${username}`);
     const userHabits = localStorage.getItem(`aura_habits_${username}`);
     const userTasks = localStorage.getItem(`aura_tasks_${username}`);
+    const userReviews = localStorage.getItem(`aura_reviews_${username}`);
 
     setGoals(userGoals ? JSON.parse(userGoals) : []);
     setHabits(userHabits ? JSON.parse(userHabits) : []);
     setTasks(userTasks ? JSON.parse(userTasks) : []);
+    setMonthlyReviews(userReviews ? JSON.parse(userReviews) : []);
   };
 
   // Auth Operations
@@ -76,6 +79,7 @@ export const AppProvider = ({ children }) => {
     setGoals([]);
     setHabits([]);
     setTasks([]);
+    setMonthlyReviews([]);
     return { success: true };
   };
 
@@ -85,6 +89,7 @@ export const AppProvider = ({ children }) => {
     setGoals([]);
     setHabits([]);
     setTasks([]);
+    setMonthlyReviews([]);
   };
 
   // Helper function to sync with LocalStorage
@@ -190,6 +195,33 @@ export const AppProvider = ({ children }) => {
     syncData('tasks', updated);
   };
 
+  // Monthly Review Operations
+  const saveMonthlyReview = (monthStr, reviewData) => {
+    const updated = [...monthlyReviews];
+    const existingIndex = updated.findIndex(r => r.monthStr === monthStr);
+    const newReview = {
+      id: existingIndex > -1 ? updated[existingIndex].id : 'rev_' + Date.now(),
+      monthStr,
+      ...reviewData,
+      updatedAt: new Date().toISOString()
+    };
+
+    if (existingIndex > -1) {
+      updated[existingIndex] = newReview;
+    } else {
+      updated.push(newReview);
+    }
+
+    setMonthlyReviews(updated);
+    syncData('reviews', updated);
+  };
+
+  const deleteMonthlyReview = (reviewId) => {
+    const updated = monthlyReviews.filter(r => r.id !== reviewId);
+    setMonthlyReviews(updated);
+    syncData('reviews', updated);
+  };
+
   // Streak Calculation Helpers
   const getHabitStreaks = (habit) => {
     if (!habit.history || habit.history.length === 0) {
@@ -257,6 +289,7 @@ export const AppProvider = ({ children }) => {
       goals,
       habits,
       tasks,
+      monthlyReviews,
       login,
       signup,
       logout,
@@ -268,6 +301,8 @@ export const AppProvider = ({ children }) => {
       addTask,
       toggleTask,
       deleteTask,
+      saveMonthlyReview,
+      deleteMonthlyReview,
       getHabitStreaks
     }}>
       {children}

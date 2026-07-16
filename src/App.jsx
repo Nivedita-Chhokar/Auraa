@@ -6,11 +6,12 @@ import { HabitTracker } from './components/Dashboard/HabitTracker';
 import { TaskTracker } from './components/Dashboard/TaskTracker';
 import { GoalTracker } from './components/Dashboard/GoalTracker';
 import { Reports } from './components/Dashboard/Reports';
+import { MonthlyReview } from './components/Dashboard/MonthlyReview';
 import './App.css';
 
 function MainAppContent() {
   const { currentUser } = useApp();
-  const [activeTab, setActiveTab] = useState('habits'); // 'habits', 'tasks', 'goals', 'reports'
+  const [activeTab, setActiveTab] = useState('habits'); // 'habits', 'tasks', 'goals', 'reports', 'review'
 
   if (!currentUser) {
     return <LandingPage />;
@@ -24,6 +25,7 @@ function MainAppContent() {
         {activeTab === 'tasks' && <TaskTracker />}
         {activeTab === 'goals' && <GoalTracker />}
         {activeTab === 'reports' && <Reports />}
+        {activeTab === 'review' && <MonthlyReview />}
       </main>
     </div>
   );

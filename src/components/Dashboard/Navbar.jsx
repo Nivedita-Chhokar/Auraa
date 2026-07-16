@@ -1,6 +1,6 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
-import { Sparkles, Calendar, CheckSquare, Target, BarChart2, LogOut, User } from 'lucide-react';
+import { Sparkles, Calendar, CheckSquare, Target, BarChart2, LogOut, User, ClipboardList } from 'lucide-react';
 
 export const Navbar = ({ activeTab, setActiveTab }) => {
   const { currentUser, logout } = useApp();
@@ -9,7 +9,8 @@ export const Navbar = ({ activeTab, setActiveTab }) => {
     { id: 'habits', label: 'Habits', icon: <Calendar size={16} /> },
     { id: 'tasks', label: 'Tasks', icon: <CheckSquare size={16} /> },
     { id: 'goals', label: 'Goals', icon: <Target size={16} /> },
-    { id: 'reports', label: 'Reports', icon: <BarChart2 size={16} /> }
+    { id: 'reports', label: 'Reports', icon: <BarChart2 size={16} /> },
+    { id: 'review', label: 'Review', icon: <ClipboardList size={16} /> }
   ];
 
   return (

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Flame, Plus, Trash2, Calendar, Target, CheckCircle2, ChevronRight, Check } from 'lucide-react';
+import { Flame, Plus, Trash2, Calendar, Target, CheckCircle2, ChevronRight, Check, ChevronLeft } from 'lucide-react';
 
 export const HabitTracker = () => {
   const { habits, goals, addHabit, toggleHabit, deleteHabit, getHabitStreaks } = useApp();
@@ -8,8 +8,13 @@ export const HabitTracker = () => {
   const [frequency, setFrequency] = useState('Daily');
   const [goalId, setGoalId] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
+  const [expandedCalendarHabitId, setExpandedCalendarHabitId] = useState(null);
 
-  // Generate list of the past 7 days
+  // Calendar states
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
+
+  // Generate list of the past 7 days for the quick list
   const getPastSevenDays = () => {
     const days = [];
     for (let i = 6; i >= 0; i--) {
@@ -45,6 +50,58 @@ export const HabitTracker = () => {
   const activeStreaksCount = habitsWithStreaks.reduce((sum, h) => sum + h.streaks.current, 0);
   const bestStreak = habitsWithStreaks.reduce((max, h) => Math.max(max, h.streaks.longest), 0);
 
+  // Calendar Grid Helper
+  const getMonthDetails = (year, month) => {
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const firstDayIndex = new Date(year, month, 1).getDay(); // 0 = Sun, 1 = Mon ...
+    
+    const dayCells = [];
+    // Prefix empty blocks
+    for (let i = 0; i < firstDayIndex; i++) {
+      dayCells.push({ isEmpty: true, id: `empty_${i}` });
+    }
+    // Days
+    for (let day = 1; day <= daysInMonth; day++) {
+      const monthFormatted = String(month + 1).padStart(2, '0');
+      const dayFormatted = String(day).padStart(2, '0');
+      const dateStr = `${year}-${monthFormatted}-${dayFormatted}`;
+      dayCells.push({ isEmpty: false, dayNum: day, dateStr, id: `day_${day}` });
+    }
+    return dayCells;
+  };
+
+  const calendarDays = getMonthDetails(currentYear, currentMonth);
+  const monthName = new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long' });
+
+  const handlePrevMonth = () => {
+    if (currentMonth === 0) {
+      setCurrentMonth(11);
+      setCurrentYear(currentYear - 1);
+    } else {
+      setCurrentMonth(currentMonth - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (currentMonth === 11) {
+      setCurrentMonth(0);
+      setCurrentYear(currentYear + 1);
+    } else {
+      setCurrentMonth(currentMonth + 1);
+    }
+  };
+
+  const toggleExpandCalendar = (habitId) => {
+    if (expandedCalendarHabitId === habitId) {
+      setExpandedCalendarHabitId(null);
+    } else {
+      setExpandedCalendarHabitId(habitId);
+      // Reset calendar focus to current month
+      setCurrentYear(new Date().getFullYear());
+      setCurrentMonth(new Date().getMonth());
+    }
+  };
+
   return (
     <div className="habits-section fade-in">
       {/* Stats Summary Widgets */}
@@ -73,7 +130,7 @@ export const HabitTracker = () => {
       <div className="section-header" style={{ marginTop: '32px' }}>
         <div>
           <h2>Daily Habits</h2>
-          <p>Commit to small acts. Toggle accomplishments for the past week to maintain consistency.</p>
+          <p>Commit to small acts. Toggle accomplishments for the past week, or expand the calendar for monthly views.</p>
         </div>
         <button 
           onClick={() => setShowAddForm(!showAddForm)} 
@@ -147,64 +204,122 @@ export const HabitTracker = () => {
         <div className="habits-list" style={{ marginTop: '20px' }}>
           {habitsWithStreaks.map(habit => {
             const mappedGoal = goals.find(g => g.id === habit.goalId);
+            const isCalendarExpanded = expandedCalendarHabitId === habit.id;
+
             return (
-              <div key={habit.id} className="aura-card habit-item fade-in">
-                {/* Habit details */}
-                <div className="habit-info">
-                  <div>
-                    <h3 className="habit-title">{habit.title}</h3>
-                    <div className="habit-meta">
-                      <span className="habit-freq">{habit.frequency}</span>
-                      {mappedGoal && (
-                        <span className="badge badge-goal" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                          <Target size={10} />
-                          <span>{mappedGoal.title}</span>
-                        </span>
-                      )}
+              <div key={habit.id} className="aura-card habit-item-card fade-in">
+                <div className="habit-item-main">
+                  {/* Habit details */}
+                  <div className="habit-info">
+                    <div>
+                      <h3 className="habit-title">{habit.title}</h3>
+                      <div className="habit-meta">
+                        <span className="habit-freq">{habit.frequency}</span>
+                        {mappedGoal && (
+                          <span className="badge badge-goal" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <Target size={10} />
+                            <span>{mappedGoal.title}</span>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="habit-streaks-indicators">
+                      <div className="streak-badge" title="Current Streak">
+                        <Flame size={14} className="streak-icon active-flame" />
+                        <span>{habit.streaks.current}d streak</span>
+                      </div>
+                      <button 
+                        onClick={() => toggleExpandCalendar(habit.id)}
+                        className={`btn-icon ${isCalendarExpanded ? 'calendar-expanded-active' : ''}`}
+                        title="View Monthly Calendar"
+                      >
+                        <Calendar size={15} />
+                      </button>
+                      <button 
+                        onClick={() => {
+                          if (confirm('Delete this habit permanently? Data history will be lost.')) {
+                            deleteHabit(habit.id);
+                          }
+                        }} 
+                        className="habit-delete-btn"
+                        title="Delete Habit"
+                      >
+                        <Trash2 size={15} />
+                      </button>
                     </div>
                   </div>
-                  
-                  <div className="habit-streaks-indicators">
-                    <div className="streak-badge" title="Current Streak">
-                      <Flame size={14} className="streak-icon active-flame" />
-                      <span>{habit.streaks.current}d streak</span>
-                    </div>
-                    <button 
-                      onClick={() => {
-                        if (confirm('Delete this habit permanently? Data history will be lost.')) {
-                          deleteHabit(habit.id);
-                        }
-                      }} 
-                      className="habit-delete-btn"
-                      title="Delete Habit"
-                    >
-                      <Trash2 size={15} />
-                    </button>
+
+                  {/* Calendar tracker row (7 day quick view) */}
+                  <div className="habit-matrix">
+                    {pastDays.map(day => {
+                      const isCompleted = habit.history.includes(day.dateStr);
+                      const isToday = day.dateStr === new Date().toISOString().split('T')[0];
+                      return (
+                        <div 
+                          key={day.dateStr} 
+                          className={`matrix-day ${isToday ? 'today' : ''}`}
+                        >
+                          <span className="day-label">{day.dayName}</span>
+                          <button
+                            onClick={() => toggleHabit(habit.id, day.dateStr)}
+                            className={`matrix-toggle ${isCompleted ? 'completed' : ''}`}
+                            title={`Toggle ${habit.title} for ${day.dateStr}`}
+                          >
+                            {isCompleted ? <Check size={14} /> : <span className="day-num">{day.dayNum}</span>}
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
-                {/* Calendar tracker row */}
-                <div className="habit-matrix">
-                  {pastDays.map(day => {
-                    const isCompleted = habit.history.includes(day.dateStr);
-                    const isToday = day.dateStr === new Date().toISOString().split('T')[0];
-                    return (
-                      <div 
-                        key={day.dateStr} 
-                        className={`matrix-day ${isToday ? 'today' : ''}`}
-                      >
-                        <span className="day-label">{day.dayName}</span>
-                        <button
-                          onClick={() => toggleHabit(habit.id, day.dateStr)}
-                          className={`matrix-toggle ${isCompleted ? 'completed' : ''}`}
-                          title={`Toggle ${habit.title} for ${day.dateStr}`}
-                        >
-                          {isCompleted ? <Check size={14} /> : <span className="day-num">{day.dayNum}</span>}
+                {/* Expanded Month View Calendar */}
+                {isCalendarExpanded && (
+                  <div className="habit-calendar-expanded fade-in">
+                    <div className="calendar-control-row">
+                      <h4>Monthly Completion Log</h4>
+                      <div className="calendar-switcher">
+                        <button onClick={handlePrevMonth} className="btn-icon month-nav-btn">
+                          <ChevronLeft size={14} />
+                        </button>
+                        <span className="calendar-month-year">{monthName} {currentYear}</span>
+                        <button onClick={handleNextMonth} className="btn-icon month-nav-btn">
+                          <ChevronRight size={14} />
                         </button>
                       </div>
-                    );
-                  })}
-                </div>
+                    </div>
+
+                    <div className="calendar-grid-header">
+                      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
+                        <div key={d} className="calendar-header-cell">{d[0]}</div>
+                      ))}
+                    </div>
+
+                    <div className="calendar-grid-body">
+                      {calendarDays.map(cell => {
+                        if (cell.isEmpty) {
+                          return <div key={cell.id} className="calendar-day-cell empty-cell" />;
+                        }
+
+                        const isCompleted = habit.history.includes(cell.dateStr);
+                        const isToday = cell.dateStr === new Date().toISOString().split('T')[0];
+
+                        return (
+                          <button
+                            key={cell.id}
+                            onClick={() => toggleHabit(habit.id, cell.dateStr)}
+                            className={`calendar-day-cell active-cell ${isCompleted ? 'completed' : ''} ${isToday ? 'today-cell' : ''}`}
+                            title={cell.dateStr}
+                          >
+                            <span>{cell.dayNum}</span>
+                            {isCompleted && <div className="completed-glow" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -258,16 +373,28 @@ export const HabitTracker = () => {
         .habits-list {
           display: flex;
           flex-direction: column;
-          gap: 16px;
+          gap: 18px;
         }
 
-        .habit-item {
+        .habit-item-card {
+          background-color: var(--bg-secondary);
+          border: 1px solid var(--border-color);
+          border-radius: var(--border-radius-md);
+          padding: 24px;
+          box-shadow: var(--shadow-sm);
+          transition: var(--transition-smooth);
+        }
+        .habit-item-card:hover {
+          border-color: var(--border-hover);
+        }
+
+        .habit-item-main {
           display: flex;
           flex-direction: column;
           gap: 20px;
         }
         @media (min-width: 768px) {
-          .habit-item {
+          .habit-item-main {
             flex-direction: row;
             justify-content: space-between;
             align-items: center;
@@ -307,7 +434,7 @@ export const HabitTracker = () => {
         .habit-streaks-indicators {
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 10px;
         }
 
         .streak-badge {
@@ -342,6 +469,12 @@ export const HabitTracker = () => {
         .habit-delete-btn:hover {
           color: var(--accent-danger);
           background-color: rgba(224, 122, 95, 0.08);
+        }
+
+        .calendar-expanded-active {
+          color: var(--accent-primary) !important;
+          border-color: var(--accent-primary) !important;
+          background-color: rgba(142, 148, 242, 0.05);
         }
 
         /* 7 Day Matrix Row */
@@ -401,6 +534,129 @@ export const HabitTracker = () => {
         .day-num {
           font-size: 0.75rem;
           font-weight: 500;
+        }
+
+        /* Expanded Calendar styles */
+        .habit-calendar-expanded {
+          margin-top: 20px;
+          padding-top: 20px;
+          border-top: 1px solid var(--border-color);
+          animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes slideDown {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        .calendar-control-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 16px;
+        }
+
+        .calendar-control-row h4 {
+          font-size: 0.9rem;
+          font-weight: 500;
+          color: var(--text-secondary);
+        }
+
+        .calendar-switcher {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .calendar-month-year {
+          font-size: 0.85rem;
+          font-weight: 600;
+          color: var(--text-primary);
+          min-width: 100px;
+          text-align: center;
+        }
+
+        .month-nav-btn {
+          width: 28px;
+          height: 28px;
+        }
+
+        .calendar-grid-header {
+          display: grid;
+          grid-template-columns: repeat(7, 1fr);
+          gap: 6px;
+          margin-bottom: 6px;
+          text-align: center;
+        }
+
+        .calendar-header-cell {
+          font-size: 0.7rem;
+          font-weight: 600;
+          color: var(--text-muted);
+          text-transform: uppercase;
+        }
+
+        .calendar-grid-body {
+          display: grid;
+          grid-template-columns: repeat(7, 1fr);
+          gap: 6px;
+        }
+
+        .calendar-day-cell {
+          aspect-ratio: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 0.8rem;
+          font-weight: 500;
+          border-radius: var(--border-radius-sm);
+          position: relative;
+          transition: var(--transition-smooth);
+        }
+
+        .empty-cell {
+          background-color: transparent;
+          pointer-events: none;
+        }
+
+        .active-cell {
+          background-color: var(--bg-tertiary);
+          border: 1px solid var(--border-color);
+          color: var(--text-secondary);
+        }
+        .active-cell:hover {
+          border-color: var(--accent-primary);
+          color: var(--text-primary);
+        }
+
+        .active-cell.completed {
+          background-color: rgba(82, 183, 136, 0.15);
+          border-color: rgba(82, 183, 136, 0.4);
+          color: var(--accent-success);
+          font-weight: 600;
+        }
+        .active-cell.completed:hover {
+          background-color: var(--accent-success);
+          border-color: var(--accent-success);
+          color: #0c0d0e;
+        }
+
+        .today-cell {
+          border-color: var(--accent-primary) !important;
+          color: var(--accent-primary) !important;
+          font-weight: 700;
+        }
+
+        .completed-glow {
+          position: absolute;
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background-color: var(--accent-success);
+          bottom: 4px;
+        }
+        .active-cell.completed:hover .completed-glow {
+          background-color: #0c0d0e;
         }
       `}</style>
     </div>
