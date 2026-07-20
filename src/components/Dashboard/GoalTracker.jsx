@@ -80,16 +80,17 @@ export const GoalTracker = () => {
         <button 
           onClick={() => setShowAddForm(!showAddForm)} 
           className="btn-btn btn-primary"
+          style={{ padding: '6px 12px', fontSize: '0.8rem' }}
         >
-          <Plus size={16} />
+          <Plus size={14} />
           <span>New Goal</span>
         </button>
       </div>
 
       {showAddForm && (
-        <form onSubmit={handleSubmit} className="aura-card goal-form-card fade-in">
+        <form onSubmit={handleSubmit} className="aura-card goal-form-card fade-in" style={{ marginBottom: '16px' }}>
           <h3>Create Objective</h3>
-          <div className="grid-2" style={{ marginTop: '16px' }}>
+          <div className="grid-2" style={{ marginTop: '12px' }}>
             <div className="form-group">
               <label className="form-label">Goal Title</label>
               <input 
@@ -112,24 +113,25 @@ export const GoalTracker = () => {
               </select>
             </div>
           </div>
-          <div className="form-group" style={{ marginTop: '12px' }}>
+          <div className="form-group" style={{ marginTop: '8px' }}>
             <label className="form-label">Description / Definition of Success</label>
             <textarea 
               placeholder="Describe what success looks like and why this goal matters..." 
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              rows={3}
+              rows={2}
             />
           </div>
-          <div className="form-actions" style={{ marginTop: '16px', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+          <div className="form-actions" style={{ marginTop: '12px', display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
             <button 
               type="button" 
               onClick={() => setShowAddForm(false)} 
               className="btn-btn btn-secondary"
+              style={{ padding: '6px 12px' }}
             >
               Cancel
             </button>
-            <button type="submit" className="btn-btn btn-primary">
+            <button type="submit" className="btn-btn btn-primary" style={{ padding: '6px 12px' }}>
               Establish Goal
             </button>
           </div>
@@ -137,20 +139,20 @@ export const GoalTracker = () => {
       )}
 
       {goals.length === 0 ? (
-        <div className="empty-state-card aura-card">
-          <Target size={40} className="empty-icon" />
+        <div className="empty-state-card aura-card" style={{ marginTop: '16px' }}>
+          <Target size={36} className="empty-icon" />
           <h3>No goals established yet</h3>
           <p>Create your first high-level life vision to start aligning your actions.</p>
           <button 
             onClick={() => setShowAddForm(true)} 
             className="btn-btn btn-secondary" 
-            style={{ marginTop: '16px' }}
+            style={{ marginTop: '12px', padding: '6px 12px' }}
           >
             Create a Goal
           </button>
         </div>
       ) : (
-        <div className="goals-grid">
+        <div className="goals-grid" style={{ marginTop: '12px' }}>
           {goals.map(goal => {
             const stats = getGoalStats(goal.id);
             return (
@@ -169,7 +171,7 @@ export const GoalTracker = () => {
                     className="goal-delete-btn"
                     title="Delete Goal"
                   >
-                    <Trash2 size={16} />
+                    <Trash2 size={14} />
                   </button>
                 </div>
 
@@ -185,14 +187,14 @@ export const GoalTracker = () => {
                   <div className="progress-bar-track">
                     <div 
                       className="progress-bar-fill" 
-                      style={{ width: `${stats.overallProgress}%` }}
+                      style={{ width: `${stats.overallProgress}%`, backgroundColor: 'var(--accent-primary)' }}
                     />
                   </div>
                 </div>
 
                 <div className="goal-metrics">
                   <div className="metric-item">
-                    <Calendar size={14} className="metric-icon" />
+                    <Calendar size={12} className="metric-icon" />
                     <span>
                       {stats.totalHabits} {stats.totalHabits === 1 ? 'Habit' : 'Habits'} Mapped
                     </span>
@@ -201,7 +203,7 @@ export const GoalTracker = () => {
                     )}
                   </div>
                   <div className="metric-item">
-                    <CheckSquare size={14} className="metric-icon" />
+                    <CheckSquare size={12} className="metric-icon" />
                     <span>
                       {stats.completedTasks}/{stats.totalTasks} Tasks Done
                     </span>
@@ -225,27 +227,25 @@ export const GoalTracker = () => {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 24px;
+          margin-bottom: 16px; /* condensed */
         }
 
         .section-header h2 {
-          font-size: 1.6rem;
-          margin-bottom: 4px;
+          font-size: 1.4rem; /* condensed from 1.6rem */
+          margin-bottom: 2px;
         }
 
         .section-header p {
-          font-size: 0.9rem;
+          font-size: 0.8rem; /* condensed from 0.9rem */
           color: var(--text-secondary);
         }
 
         .goal-form-card {
-          margin-bottom: 24px;
           border-color: var(--accent-primary);
         }
 
         .goal-form-card h3 {
-          font-size: 1.1rem;
-          font-weight: 600;
+          font-size: 1rem;
         }
 
         .empty-state-card {
@@ -253,7 +253,7 @@ export const GoalTracker = () => {
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          padding: 60px 24px;
+          padding: 40px 16px; /* condensed */
           text-align: center;
           background-color: var(--bg-secondary);
           border: 1px dashed var(--border-color);
@@ -261,17 +261,17 @@ export const GoalTracker = () => {
 
         .empty-icon {
           color: var(--text-muted);
-          margin-bottom: 16px;
+          margin-bottom: 12px;
         }
 
         .empty-state-card h3 {
-          margin-bottom: 8px;
+          margin-bottom: 6px;
         }
 
         .goals-grid {
           display: grid;
           grid-template-columns: 1fr;
-          gap: 24px;
+          gap: 16px; /* condensed from 24px */
         }
         @media (min-width: 768px) {
           .goals-grid {
@@ -283,24 +283,24 @@ export const GoalTracker = () => {
           display: flex;
           flex-direction: column;
           justify-content: space-between;
-          gap: 20px;
+          gap: 12px; /* condensed from 20px */
         }
 
         .goal-card-header {
           display: flex;
           justify-content: space-between;
           align-items: flex-start;
-          gap: 12px;
+          gap: 10px;
         }
 
         .goal-title {
-          font-size: 1.2rem;
-          margin-top: 8px;
+          font-size: 1.05rem; /* condensed from 1.2rem */
+          margin-top: 6px;
         }
 
         .goal-delete-btn {
           color: var(--text-muted);
-          padding: 6px;
+          padding: 4px;
           border-radius: var(--border-radius-sm);
           transition: var(--transition-smooth);
         }
@@ -310,9 +310,9 @@ export const GoalTracker = () => {
         }
 
         .goal-description {
-          font-size: 0.85rem;
+          font-size: 0.8rem; /* condensed from 0.85rem */
           color: var(--text-secondary);
-          line-height: 1.5;
+          line-height: 1.4;
           display: -webkit-box;
           -webkit-line-clamp: 2;
           -webkit-box-orient: vertical;
@@ -320,15 +320,15 @@ export const GoalTracker = () => {
         }
 
         .goal-progress-section {
-          margin-top: 8px;
+          margin-top: 4px;
         }
 
         .progress-header {
           display: flex;
           justify-content: space-between;
-          font-size: 0.8rem;
+          font-size: 0.75rem; /* condensed from 0.8rem */
           color: var(--text-secondary);
-          margin-bottom: 6px;
+          margin-bottom: 4px;
         }
 
         .progress-val {
@@ -337,7 +337,7 @@ export const GoalTracker = () => {
         }
 
         .progress-bar-track {
-          height: 6px;
+          height: 5px; /* condensed from 6px */
           background-color: var(--bg-tertiary);
           border-radius: 3px;
           overflow: hidden;
@@ -345,7 +345,6 @@ export const GoalTracker = () => {
 
         .progress-bar-fill {
           height: 100%;
-          background-color: var(--accent-primary);
           border-radius: 3px;
           transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -353,16 +352,16 @@ export const GoalTracker = () => {
         .goal-metrics {
           display: flex;
           flex-direction: column;
-          gap: 10px;
-          padding-top: 14px;
+          gap: 6px; /* condensed from 10px */
+          padding-top: 10px; /* condensed from 14px */
           border-top: 1px solid var(--border-color);
         }
 
         .metric-item {
           display: flex;
           align-items: center;
-          gap: 8px;
-          font-size: 0.85rem;
+          gap: 6px;
+          font-size: 0.75rem; /* condensed from 0.85rem */
           color: var(--text-secondary);
         }
 
@@ -372,7 +371,7 @@ export const GoalTracker = () => {
 
         .metric-sub-val {
           margin-left: auto;
-          font-size: 0.8rem;
+          font-size: 0.75rem;
           color: var(--accent-success);
           font-weight: 500;
         }

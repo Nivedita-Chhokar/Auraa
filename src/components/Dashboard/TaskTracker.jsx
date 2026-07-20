@@ -59,8 +59,8 @@ export const TaskTracker = () => {
     <div className="tasks-section fade-in">
       {/* Date Switcher Panel */}
       <div className="date-navigation aura-card">
-        <button onClick={() => shiftDate(-1)} className="btn-icon nav-date-btn">
-          <ArrowLeft size={16} />
+        <button onClick={() => shiftDate(-1)} className="btn-icon nav-date-btn" style={{ width: '28px', height: '28px' }}>
+          <ArrowLeft size={14} />
         </button>
         <div className="date-center">
           <span className="friendly-date">{getFriendlyDate()}</span>
@@ -71,13 +71,13 @@ export const TaskTracker = () => {
             </button>
           )}
         </div>
-        <button onClick={() => shiftDate(1)} className="btn-icon nav-date-btn">
-          <ArrowRight size={16} />
+        <button onClick={() => shiftDate(1)} className="btn-icon nav-date-btn" style={{ width: '28px', height: '28px' }}>
+          <ArrowRight size={14} />
         </button>
       </div>
 
       {/* Daily Progress Widget */}
-      <div className="aura-card progress-widget-card" style={{ marginTop: '24px' }}>
+      <div className="aura-card progress-widget-card" style={{ marginTop: '12px' }}>
         <div className="progress-details">
           <div>
             <h3>Completion Ratio</h3>
@@ -86,12 +86,12 @@ export const TaskTracker = () => {
           <span className="progress-percentage">{progressPercent}%</span>
         </div>
         <div className="progress-bar-track">
-          <div className="progress-bar-fill" style={{ width: `${progressPercent}%` }} />
+          <div className="progress-bar-fill" style={{ width: `${progressPercent}%`, backgroundColor: 'var(--accent-primary)' }} />
         </div>
       </div>
 
       {/* Header Panel */}
-      <div className="section-header" style={{ marginTop: '32px' }}>
+      <div className="section-header" style={{ marginTop: '20px' }}>
         <div>
           <h2>Intention Checklist</h2>
           <p>List tasks that require focus today. Link them to life visions to gauge progress.</p>
@@ -99,16 +99,17 @@ export const TaskTracker = () => {
         <button 
           onClick={() => setShowAddForm(!showAddForm)} 
           className="btn-btn btn-primary"
+          style={{ padding: '6px 12px', fontSize: '0.8rem' }}
         >
-          <Plus size={16} />
+          <Plus size={14} />
           <span>Add Task</span>
         </button>
       </div>
 
       {showAddForm && (
-        <form onSubmit={handleSubmit} className="aura-card task-form-card fade-in">
+        <form onSubmit={handleSubmit} className="aura-card task-form-card fade-in" style={{ marginBottom: '16px' }}>
           <h3>Create Daily Action Item</h3>
-          <div className="grid-3" style={{ marginTop: '16px' }}>
+          <div className="grid-3" style={{ marginTop: '12px' }}>
             <div className="form-group">
               <label className="form-label">Task description</label>
               <input 
@@ -137,15 +138,16 @@ export const TaskTracker = () => {
               </select>
             </div>
           </div>
-          <div className="form-actions" style={{ marginTop: '16px', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+          <div className="form-actions" style={{ marginTop: '12px', display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
             <button 
               type="button" 
               onClick={() => setShowAddForm(false)} 
               className="btn-btn btn-secondary"
+              style={{ padding: '6px 12px' }}
             >
               Cancel
             </button>
-            <button type="submit" className="btn-btn btn-primary">
+            <button type="submit" className="btn-btn btn-primary" style={{ padding: '6px 12px' }}>
               Log Action
             </button>
           </div>
@@ -154,20 +156,20 @@ export const TaskTracker = () => {
 
       {/* Task List Grid */}
       {filteredTasks.length === 0 ? (
-        <div className="empty-state-card aura-card" style={{ marginTop: '20px' }}>
-          <CheckCircle2 size={40} className="empty-icon" />
+        <div className="empty-state-card aura-card" style={{ marginTop: '16px' }}>
+          <CheckCircle2 size={36} className="empty-icon" />
           <h3>All clear for {getFriendlyDate()}</h3>
           <p>No logged items. Rest up or schedule ahead.</p>
           <button 
             onClick={() => setShowAddForm(true)} 
             className="btn-btn btn-secondary" 
-            style={{ marginTop: '16px' }}
+            style={{ marginTop: '12px', padding: '6px 12px' }}
           >
             Create Task
           </button>
         </div>
       ) : (
-        <div className="tasks-list" style={{ marginTop: '20px' }}>
+        <div className="tasks-list" style={{ marginTop: '12px' }}>
           {filteredTasks.map(task => {
             const mappedGoal = goals.find(g => g.id === task.goalId);
             return (
@@ -182,9 +184,9 @@ export const TaskTracker = () => {
                     title={task.isCompleted ? 'Mark Incomplete' : 'Mark Complete'}
                   >
                     {task.isCompleted ? (
-                      <CheckCircle2 size={20} className="checkbox-icon checked" />
+                      <CheckCircle2 size={18} className="checkbox-icon checked" />
                     ) : (
-                      <Circle size={20} className="checkbox-icon" />
+                      <Circle size={18} className="checkbox-icon" />
                     )}
                   </button>
                   
@@ -195,8 +197,8 @@ export const TaskTracker = () => {
                         {task.priority}
                       </span>
                       {mappedGoal && (
-                        <span className="badge badge-goal" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                          <Target size={10} />
+                        <span className="badge badge-goal" style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                          <Target size={9} />
                           <span>{mappedGoal.title}</span>
                         </span>
                       )}
@@ -209,7 +211,7 @@ export const TaskTracker = () => {
                   className="task-delete-btn"
                   title="Remove Task"
                 >
-                  <Trash2 size={16} />
+                  <Trash2 size={14} />
                 </button>
               </div>
             );
@@ -226,35 +228,35 @@ export const TaskTracker = () => {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 16px 24px;
+          padding: 8px 16px; /* condensed from 16px 24px */
         }
 
         .date-center {
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 4px;
+          gap: 2px;
         }
 
         .friendly-date {
-          font-size: 1.15rem;
+          font-size: 0.95rem; /* condensed from 1.15rem */
           font-weight: 600;
           color: var(--text-primary);
         }
 
         .literal-date {
-          font-size: 0.8rem;
+          font-size: 0.75rem;
           color: var(--text-secondary);
         }
 
         .today-shortcut-btn {
-          font-size: 0.75rem;
+          font-size: 0.7rem;
           color: var(--accent-primary);
           background: none;
           border: none;
           cursor: pointer;
           font-weight: 500;
-          margin-top: 2px;
+          margin-top: 1px;
           text-decoration: underline;
         }
         .today-shortcut-btn:hover {
@@ -262,28 +264,28 @@ export const TaskTracker = () => {
         }
 
         .progress-widget-card {
-          padding: 20px;
+          padding: 12px 16px; /* condensed from 20px */
         }
 
         .progress-details {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 12px;
+          margin-bottom: 8px; /* condensed from 12px */
         }
 
         .progress-details h3 {
-          font-size: 1rem;
-          margin-bottom: 2px;
+          font-size: 0.9rem; /* condensed from 1rem */
+          margin-bottom: 1px;
         }
 
         .progress-details p {
-          font-size: 0.8rem;
+          font-size: 0.75rem;
           color: var(--text-secondary);
         }
 
         .progress-percentage {
-          font-size: 1.5rem;
+          font-size: 1.25rem; /* condensed from 1.5rem */
           font-weight: 700;
           color: var(--text-primary);
         }
@@ -293,13 +295,13 @@ export const TaskTracker = () => {
         }
 
         .task-form-card h3 {
-          font-size: 1.1rem;
+          font-size: 1rem;
         }
 
         .tasks-list {
           display: flex;
           flex-direction: column;
-          gap: 12px;
+          gap: 8px; /* condensed from 12px */
         }
 
         .task-item {
@@ -309,7 +311,7 @@ export const TaskTracker = () => {
         .task-left {
           display: flex;
           align-items: center;
-          gap: 16px;
+          gap: 12px; /* condensed from 16px */
           flex: 1;
         }
 
@@ -330,7 +332,7 @@ export const TaskTracker = () => {
         }
 
         .task-title {
-          font-size: 0.95rem;
+          font-size: 0.9rem; /* condensed from 0.95rem */
           font-weight: 500;
           color: var(--text-primary);
           transition: var(--transition-smooth);
@@ -348,18 +350,18 @@ export const TaskTracker = () => {
         .task-details {
           display: flex;
           flex-direction: column;
-          gap: 4px;
+          gap: 2px;
         }
 
         .task-meta {
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 6px;
         }
 
         .task-delete-btn {
           color: var(--text-muted);
-          padding: 6px;
+          padding: 4px;
           border-radius: var(--border-radius-sm);
           transition: var(--transition-smooth);
         }

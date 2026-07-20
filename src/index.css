@@ -20,10 +20,40 @@
   --border-radius-sm: 8px;
   --border-radius-md: 12px;
   --border-radius-lg: 20px;
-  --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
   --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.6);
+
+  --navbar-bg: rgba(9, 10, 12, 0.7);
+  --brand-color: #ffffff;
+  --grid-color: rgba(255, 255, 255, 0.03);
+}
+
+body.light-theme {
+  --bg-primary: #f6f8fa;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f1f3f5;
+  --border-color: #e1e4e8;
+  --border-hover: #d1d5da;
+  --text-primary: #1b1f23;
+  --text-secondary: #586069;
+  --text-muted: #959da5;
+  
+  --accent-primary: #5a62f1; /* Rich indigo for better visibility */
+  --accent-primary-hover: #434be0;
+  --accent-success: #1b8a5a;
+  --accent-success-hover: #127248;
+  --accent-warning: #e39000;
+  --accent-danger: #d9381e;
+
+  --navbar-bg: rgba(246, 248, 250, 0.75);
+  --brand-color: #1b1f23;
+  --grid-color: rgba(0, 0, 0, 0.02);
+  
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.06);
 }
 
 * {
@@ -40,6 +70,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
   line-height: 1.5;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Custom Scrollbar */
@@ -87,15 +118,15 @@ button {
   outline: none;
 }
 
-/* Inputs & Form Elements */
+/* Inputs & Form Elements - Condensed size */
 input, select, textarea {
   font-family: var(--font-family);
   background-color: var(--bg-secondary);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-sm);
   color: var(--text-primary);
-  padding: 10px 14px;
-  font-size: 0.95rem;
+  padding: 8px 12px;
+  font-size: 0.9rem;
   outline: none;
   transition: var(--transition-smooth);
   width: 100%;
@@ -115,9 +146,20 @@ input::placeholder, textarea::placeholder {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  position: relative;
+}
+
+/* Tech SaaS Grid background */
+.app-container::before {
+  content: "";
+  position: absolute;
+  inset: 0;
   background-image: 
-    radial-gradient(at 0% 0%, rgba(142, 148, 242, 0.03) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(82, 183, 136, 0.03) 0px, transparent 50%);
+    linear-gradient(var(--grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .dashboard-layout {
@@ -126,34 +168,34 @@ input::placeholder, textarea::placeholder {
   max-width: 1200px;
   width: 100%;
   margin: 0 auto;
-  padding: 96px 24px 48px; /* Top padding allows floating header */
-  gap: 32px;
+  padding: 80px 24px 32px; /* reduced top padding */
+  gap: 20px; /* reduced gap */
   flex-grow: 1;
+  z-index: 1;
 }
 
-/* Card Style */
+/* Card Style - Condensed padding */
 .aura-card {
   background-color: var(--bg-secondary);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-md);
-  padding: 24px;
+  padding: 16px 20px; /* reduced padding from 24px */
   box-shadow: var(--shadow-sm);
   transition: var(--transition-smooth);
 }
 .aura-card:hover {
   border-color: var(--border-hover);
-  transform: translateY(-2px);
   box-shadow: var(--shadow-md);
 }
 
-/* Primary/Secondary Buttons */
+/* Primary/Secondary Buttons - Tighter layout */
 .btn-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 10px 20px;
-  font-size: 0.9rem;
+  gap: 6px;
+  padding: 8px 16px; /* condensed padding */
+  font-size: 0.85rem;
   font-weight: 500;
   border-radius: var(--border-radius-sm);
   transition: var(--transition-smooth);
@@ -162,12 +204,15 @@ input::placeholder, textarea::placeholder {
 
 .btn-primary {
   background-color: var(--accent-primary);
-  color: #0c0d0e;
+  color: var(--bg-primary); /* dynamically contrasts */
   font-weight: 600;
 }
 .btn-primary:hover {
   background-color: var(--accent-primary-hover);
   transform: translateY(-1px);
+}
+body.light-theme .btn-primary {
+  color: #ffffff; /* ensure absolute clarity on light background */
 }
 
 .btn-secondary {
@@ -194,8 +239,8 @@ input::placeholder, textarea::placeholder {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 32px; /* condensed size from 36px */
+  height: 32px;
   border-radius: var(--border-radius-sm);
   background-color: transparent;
   border: 1px solid var(--border-color);
@@ -210,12 +255,12 @@ input::placeholder, textarea::placeholder {
 
 /* Animations */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 .fade-in {
-  animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 /* Form Styles */
@@ -225,28 +270,29 @@ input::placeholder, textarea::placeholder {
   justify-content: center;
   min-height: 100vh;
   padding: 24px;
+  z-index: 1;
 }
 
 .auth-card {
   width: 100%;
-  max-width: 420px;
+  max-width: 400px;
   background-color: var(--bg-secondary);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-lg);
-  padding: 40px;
+  padding: 32px; /* condensed padding */
   box-shadow: var(--shadow-lg);
-  animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 16px; /* condensed */
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .form-label {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 500;
   color: var(--text-secondary);
   text-transform: uppercase;
@@ -257,7 +303,7 @@ input::placeholder, textarea::placeholder {
 .grid-2 {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 24px;
+  gap: 16px; /* condensed gap */
 }
 @media (min-width: 768px) {
   .grid-2 {
@@ -268,7 +314,7 @@ input::placeholder, textarea::placeholder {
 .grid-3 {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 24px;
+  gap: 16px;
 }
 @media (min-width: 768px) {
   .grid-3 {
@@ -279,11 +325,11 @@ input::placeholder, textarea::placeholder {
 .grid-dashboard {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 24px;
+  gap: 16px;
 }
 @media (min-width: 992px) {
   .grid-dashboard {
-    grid-template-columns: 1.6fr 1fr;
+    grid-template-columns: 1.7fr 1fr;
   }
 }
 
@@ -291,9 +337,9 @@ input::placeholder, textarea::placeholder {
 .badge {
   display: inline-flex;
   align-items: center;
-  padding: 4px 10px;
+  padding: 2px 8px; /* condensed */
   border-radius: 20px;
-  font-size: 0.75rem;
+  font-size: 0.7rem; /* condensed from 0.75rem */
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -303,6 +349,10 @@ input::placeholder, textarea::placeholder {
   background-color: rgba(142, 148, 242, 0.1);
   border: 1px solid rgba(142, 148, 242, 0.2);
   color: var(--accent-primary);
+}
+body.light-theme .badge-goal {
+  background-color: rgba(90, 98, 241, 0.08);
+  border: 1px solid rgba(90, 98, 241, 0.15);
 }
 
 .badge-priority-high {
@@ -323,12 +373,12 @@ input::placeholder, textarea::placeholder {
   color: var(--text-secondary);
 }
 
-/* UI Micro interactions */
+/* UI Micro interactions - Condensed checklist items */
 .interactive-list-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px;
+  padding: 10px 14px; /* condensed from 16px */
   background-color: var(--bg-tertiary);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-sm);

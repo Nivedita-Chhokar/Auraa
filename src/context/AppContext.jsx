@@ -5,6 +5,20 @@ const AppContext = createContext();
 export const AppProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [users, setUsers] = useState([]);
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem('aura_theme');
+    if (saved) return saved;
+    return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  });
+
+  useEffect(() => {
+    document.body.classList.toggle('light-theme', theme === 'light');
+    localStorage.setItem('aura_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
   
   // User-specific states
   const [goals, setGoals] = useState([]);
@@ -290,6 +304,8 @@ export const AppProvider = ({ children }) => {
       habits,
       tasks,
       monthlyReviews,
+      theme,
+      toggleTheme,
       login,
       signup,
       logout,

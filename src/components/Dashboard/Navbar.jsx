@@ -1,9 +1,9 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
-import { Sparkles, Calendar, CheckSquare, Target, BarChart2, LogOut, User, ClipboardList } from 'lucide-react';
+import { Sparkles, Calendar, CheckSquare, Target, BarChart2, LogOut, User, ClipboardList, Sun, Moon } from 'lucide-react';
 
 export const Navbar = ({ activeTab, setActiveTab }) => {
-  const { currentUser, logout } = useApp();
+  const { currentUser, logout, theme, toggleTheme } = useApp();
 
   const tabs = [
     { id: 'habits', label: 'Habits', icon: <Calendar size={16} /> },
@@ -19,7 +19,7 @@ export const Navbar = ({ activeTab, setActiveTab }) => {
         {/* Brand */}
         <div className="nav-brand" onClick={() => setActiveTab('habits')} style={{ cursor: 'pointer' }}>
           <Sparkles size={18} className="nav-brand-icon" />
-          <span>AURA</span>
+          <span>AURAA</span>
         </div>
 
         {/* Navigation Tabs */}
@@ -36,12 +36,21 @@ export const Navbar = ({ activeTab, setActiveTab }) => {
           ))}
         </nav>
 
-        {/* User Info & Logout */}
+        {/* User Info, Theme Toggle & Logout */}
         <div className="nav-user-actions">
           <div className="nav-user-badge">
             <User size={14} className="user-icon" />
             <span className="username">{currentUser?.username}</span>
           </div>
+          
+          <button 
+            onClick={toggleTheme} 
+            className="btn-icon nav-theme-btn" 
+            title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}
+          >
+            {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+          </button>
+
           <button onClick={logout} className="btn-icon nav-logout-btn" title="Logout">
             <LogOut size={16} />
           </button>
@@ -55,7 +64,7 @@ export const Navbar = ({ activeTab, setActiveTab }) => {
           left: 0;
           right: 0;
           height: 64px;
-          background-color: rgba(9, 10, 12, 0.7);
+          background-color: var(--navbar-bg);
           backdrop-filter: blur(12px);
           -webkit-backdrop-filter: blur(12px);
           border-bottom: 1px solid var(--border-color);
@@ -80,7 +89,7 @@ export const Navbar = ({ activeTab, setActiveTab }) => {
           gap: 8px;
           font-weight: 700;
           letter-spacing: 0.2em;
-          color: #ffffff;
+          color: var(--brand-color);
         }
 
         .nav-brand-icon {
@@ -120,7 +129,7 @@ export const Navbar = ({ activeTab, setActiveTab }) => {
         .nav-user-actions {
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 10px;
         }
 
         .nav-user-badge {
@@ -151,6 +160,16 @@ export const Navbar = ({ activeTab, setActiveTab }) => {
           color: var(--accent-danger);
           border-color: rgba(224, 122, 95, 0.4);
           background-color: rgba(224, 122, 95, 0.05);
+        }
+
+        .nav-theme-btn {
+          border-color: var(--border-color);
+          color: var(--text-secondary);
+        }
+        .nav-theme-btn:hover {
+          color: var(--accent-primary);
+          border-color: var(--accent-primary);
+          background-color: var(--bg-tertiary);
         }
 
         @media (max-width: 768px) {

@@ -114,7 +114,7 @@ export const HabitTracker = () => {
         <div className="aura-card stat-card">
           <div className="stat-label">Total Current Streaks</div>
           <div className="stat-value text-accent">
-            <Flame size={28} className="inline-icon flame-icon" />
+            <Flame size={20} className="inline-icon flame-icon" />
             <span>{activeStreaksCount} Days</span>
           </div>
           <div className="stat-desc">Consecutive days active</div>
@@ -127,7 +127,7 @@ export const HabitTracker = () => {
       </div>
 
       {/* Header and Add Form toggle */}
-      <div className="section-header" style={{ marginTop: '32px' }}>
+      <div className="section-header" style={{ marginTop: '20px' }}>
         <div>
           <h2>Daily Habits</h2>
           <p>Commit to small acts. Toggle accomplishments for the past week, or expand the calendar for monthly views.</p>
@@ -135,16 +135,17 @@ export const HabitTracker = () => {
         <button 
           onClick={() => setShowAddForm(!showAddForm)} 
           className="btn-btn btn-primary"
+          style={{ padding: '6px 12px', fontSize: '0.8rem' }}
         >
-          <Plus size={16} />
+          <Plus size={14} />
           <span>Add Habit</span>
         </button>
       </div>
 
       {showAddForm && (
-        <form onSubmit={handleSubmit} className="aura-card habit-form-card fade-in">
+        <form onSubmit={handleSubmit} className="aura-card habit-form-card fade-in" style={{ marginBottom: '16px' }}>
           <h3>Create Compounding Habit</h3>
-          <div className="grid-3" style={{ marginTop: '16px' }}>
+          <div className="grid-3" style={{ marginTop: '12px' }}>
             <div className="form-group">
               <label className="form-label">Habit Name</label>
               <input 
@@ -172,15 +173,16 @@ export const HabitTracker = () => {
               </select>
             </div>
           </div>
-          <div className="form-actions" style={{ marginTop: '16px', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+          <div className="form-actions" style={{ marginTop: '12px', display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
             <button 
               type="button" 
               onClick={() => setShowAddForm(false)} 
               className="btn-btn btn-secondary"
+              style={{ padding: '6px 12px' }}
             >
               Cancel
             </button>
-            <button type="submit" className="btn-btn btn-primary">
+            <button type="submit" className="btn-btn btn-primary" style={{ padding: '6px 12px' }}>
               Build Habit
             </button>
           </div>
@@ -188,20 +190,20 @@ export const HabitTracker = () => {
       )}
 
       {habits.length === 0 ? (
-        <div className="empty-state-card aura-card" style={{ marginTop: '20px' }}>
-          <Calendar size={40} className="empty-icon" />
+        <div className="empty-state-card aura-card" style={{ marginTop: '16px' }}>
+          <Calendar size={36} className="empty-icon" />
           <h3>No habits being tracked</h3>
           <p>Habits shape your actions. Establish your first habit to begin building consistency.</p>
           <button 
             onClick={() => setShowAddForm(true)} 
             className="btn-btn btn-secondary" 
-            style={{ marginTop: '16px' }}
+            style={{ marginTop: '12px', padding: '6px 12px' }}
           >
             Create Habit
           </button>
         </div>
       ) : (
-        <div className="habits-list" style={{ marginTop: '20px' }}>
+        <div className="habits-list" style={{ marginTop: '12px' }}>
           {habitsWithStreaks.map(habit => {
             const mappedGoal = goals.find(g => g.id === habit.goalId);
             const isCalendarExpanded = expandedCalendarHabitId === habit.id;
@@ -216,8 +218,8 @@ export const HabitTracker = () => {
                       <div className="habit-meta">
                         <span className="habit-freq">{habit.frequency}</span>
                         {mappedGoal && (
-                          <span className="badge badge-goal" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                            <Target size={10} />
+                          <span className="badge badge-goal" style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                            <Target size={9} />
                             <span>{mappedGoal.title}</span>
                           </span>
                         )}
@@ -226,15 +228,15 @@ export const HabitTracker = () => {
                     
                     <div className="habit-streaks-indicators">
                       <div className="streak-badge" title="Current Streak">
-                        <Flame size={14} className="streak-icon active-flame" />
-                        <span>{habit.streaks.current}d streak</span>
+                        <Flame size={12} className="streak-icon active-flame" />
+                        <span>{habit.streaks.current}d</span>
                       </div>
                       <button 
                         onClick={() => toggleExpandCalendar(habit.id)}
-                        className={`btn-icon ${isCalendarExpanded ? 'calendar-expanded-active' : ''}`}
+                        className={`btn-icon habit-compact-btn ${isCalendarExpanded ? 'calendar-expanded-active' : ''}`}
                         title="View Monthly Calendar"
                       >
-                        <Calendar size={15} />
+                        <Calendar size={13} />
                       </button>
                       <button 
                         onClick={() => {
@@ -245,7 +247,7 @@ export const HabitTracker = () => {
                         className="habit-delete-btn"
                         title="Delete Habit"
                       >
-                        <Trash2 size={15} />
+                        <Trash2 size={13} />
                       </button>
                     </div>
                   </div>
@@ -266,7 +268,7 @@ export const HabitTracker = () => {
                             className={`matrix-toggle ${isCompleted ? 'completed' : ''}`}
                             title={`Toggle ${habit.title} for ${day.dateStr}`}
                           >
-                            {isCompleted ? <Check size={14} /> : <span className="day-num">{day.dayNum}</span>}
+                            {isCompleted ? <Check size={11} /> : <span className="day-num">{day.dayNum}</span>}
                           </button>
                         </div>
                       );
@@ -281,11 +283,11 @@ export const HabitTracker = () => {
                       <h4>Monthly Completion Log</h4>
                       <div className="calendar-switcher">
                         <button onClick={handlePrevMonth} className="btn-icon month-nav-btn">
-                          <ChevronLeft size={14} />
+                          <ChevronLeft size={12} />
                         </button>
                         <span className="calendar-month-year">{monthName} {currentYear}</span>
                         <button onClick={handleNextMonth} className="btn-icon month-nav-btn">
-                          <ChevronRight size={14} />
+                          <ChevronRight size={12} />
                         </button>
                       </div>
                     </div>
@@ -332,25 +334,21 @@ export const HabitTracker = () => {
         }
 
         .stat-card {
-          padding: 20px;
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
+          padding: 12px 16px;
+          gap: 4px;
         }
 
         .stat-label {
-          font-size: 0.8rem;
+          font-size: 0.75rem;
           color: var(--text-secondary);
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
         }
 
         .stat-value {
-          font-size: 1.8rem;
+          font-size: 1.4rem;
           font-weight: 700;
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 6px;
         }
 
         .flame-icon {
@@ -358,7 +356,7 @@ export const HabitTracker = () => {
         }
 
         .stat-desc {
-          font-size: 0.75rem;
+          font-size: 0.7rem;
           color: var(--text-muted);
         }
 
@@ -367,20 +365,20 @@ export const HabitTracker = () => {
         }
 
         .habit-form-card h3 {
-          font-size: 1.1rem;
+          font-size: 1rem;
         }
 
         .habits-list {
           display: flex;
           flex-direction: column;
-          gap: 18px;
+          gap: 12px; /* reduced from 18px */
         }
 
         .habit-item-card {
           background-color: var(--bg-secondary);
           border: 1px solid var(--border-color);
           border-radius: var(--border-radius-md);
-          padding: 24px;
+          padding: 12px 16px; /* condensed padding from 24px */
           box-shadow: var(--shadow-sm);
           transition: var(--transition-smooth);
         }
@@ -391,7 +389,7 @@ export const HabitTracker = () => {
         .habit-item-main {
           display: flex;
           flex-direction: column;
-          gap: 20px;
+          gap: 12px; /* condensed from 20px */
         }
         @media (min-width: 768px) {
           .habit-item-main {
@@ -405,12 +403,12 @@ export const HabitTracker = () => {
           display: flex;
           justify-content: space-between;
           align-items: flex-start;
-          gap: 16px;
+          gap: 12px;
           flex: 1;
         }
 
         .habit-title {
-          font-size: 1.1rem;
+          font-size: 0.95rem; /* condensed from 1.1rem */
           font-weight: 600;
           color: var(--text-primary);
         }
@@ -418,15 +416,15 @@ export const HabitTracker = () => {
         .habit-meta {
           display: flex;
           align-items: center;
-          gap: 10px;
-          margin-top: 6px;
+          gap: 8px;
+          margin-top: 4px;
         }
 
         .habit-freq {
-          font-size: 0.75rem;
+          font-size: 0.7rem;
           color: var(--text-secondary);
           background-color: var(--bg-tertiary);
-          padding: 2px 8px;
+          padding: 1px 6px;
           border-radius: 4px;
           border: 1px solid var(--border-color);
         }
@@ -434,18 +432,18 @@ export const HabitTracker = () => {
         .habit-streaks-indicators {
           display: flex;
           align-items: center;
-          gap: 10px;
+          gap: 8px;
         }
 
         .streak-badge {
           display: flex;
           align-items: center;
-          gap: 6px;
+          gap: 4px;
           background-color: rgba(255, 209, 102, 0.08);
           border: 1px solid rgba(255, 209, 102, 0.15);
-          padding: 4px 10px;
+          padding: 2px 8px;
           border-radius: 12px;
-          font-size: 0.8rem;
+          font-size: 0.75rem;
           color: var(--accent-warning);
           font-weight: 500;
         }
@@ -456,13 +454,18 @@ export const HabitTracker = () => {
 
         @keyframes pulse {
           0% { transform: scale(1); opacity: 0.8; }
-          50% { transform: scale(1.15); opacity: 1; }
+          50% { transform: scale(1.1); opacity: 1; }
           100% { transform: scale(1); opacity: 0.8; }
+        }
+
+        .habit-compact-btn {
+          width: 26px;
+          height: 26px;
         }
 
         .habit-delete-btn {
           color: var(--text-muted);
-          padding: 6px;
+          padding: 4px;
           border-radius: var(--border-radius-sm);
           transition: var(--transition-smooth);
         }
@@ -477,13 +480,13 @@ export const HabitTracker = () => {
           background-color: rgba(142, 148, 242, 0.05);
         }
 
-        /* 7 Day Matrix Row */
+        /* 7 Day Matrix Row - Condensed */
         .habit-matrix {
           display: flex;
-          gap: 8px;
+          gap: 6px;
           justify-content: space-between;
           background-color: var(--bg-tertiary);
-          padding: 10px 16px;
+          padding: 6px 12px; /* condensed from 10px 16px */
           border-radius: var(--border-radius-sm);
           border: 1px solid var(--border-color);
         }
@@ -492,8 +495,8 @@ export const HabitTracker = () => {
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 6px;
-          width: 38px;
+          gap: 4px;
+          width: 32px; /* condensed from 38px */
         }
 
         .matrix-day.today .day-label {
@@ -502,14 +505,14 @@ export const HabitTracker = () => {
         }
 
         .day-label {
-          font-size: 0.7rem;
+          font-size: 0.65rem;
           color: var(--text-secondary);
           text-transform: uppercase;
         }
 
         .matrix-toggle {
-          width: 32px;
-          height: 32px;
+          width: 26px; /* shrunk from 32px */
+          height: 26px;
           border-radius: 50%;
           background-color: var(--bg-secondary);
           border: 1px solid var(--border-color);
@@ -528,24 +531,28 @@ export const HabitTracker = () => {
         .matrix-toggle.completed {
           background-color: var(--accent-success);
           border-color: var(--accent-success);
-          color: #0c0d0e;
+          color: #ffffff;
+        }
+        body.light-theme .matrix-toggle.completed {
+          color: #ffffff;
         }
 
         .day-num {
-          font-size: 0.75rem;
+          font-size: 0.7rem;
           font-weight: 500;
         }
 
-        /* Expanded Calendar styles */
+        /* Expanded Calendar styles - Compact Fixed Small Boxes */
         .habit-calendar-expanded {
-          margin-top: 20px;
-          padding-top: 20px;
+          margin-top: 14px;
+          padding-top: 14px;
           border-top: 1px solid var(--border-color);
-          animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          max-width: 260px;
+          animation: slideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
         @keyframes slideDown {
-          from { opacity: 0; transform: translateY(-10px); }
+          from { opacity: 0; transform: translateY(-8px); }
           to { opacity: 1; transform: translateY(0); }
         }
 
@@ -553,11 +560,11 @@ export const HabitTracker = () => {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 16px;
+          margin-bottom: 10px;
         }
 
         .calendar-control-row h4 {
-          font-size: 0.9rem;
+          font-size: 0.75rem;
           font-weight: 500;
           color: var(--text-secondary);
         }
@@ -565,32 +572,32 @@ export const HabitTracker = () => {
         .calendar-switcher {
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 6px;
         }
 
         .calendar-month-year {
-          font-size: 0.85rem;
+          font-size: 0.75rem;
           font-weight: 600;
           color: var(--text-primary);
-          min-width: 100px;
+          min-width: 80px;
           text-align: center;
         }
 
         .month-nav-btn {
-          width: 28px;
-          height: 28px;
+          width: 22px;
+          height: 22px;
         }
 
         .calendar-grid-header {
           display: grid;
           grid-template-columns: repeat(7, 1fr);
-          gap: 6px;
-          margin-bottom: 6px;
+          gap: 4px;
+          margin-bottom: 4px;
           text-align: center;
         }
 
         .calendar-header-cell {
-          font-size: 0.7rem;
+          font-size: 0.65rem;
           font-weight: 600;
           color: var(--text-muted);
           text-transform: uppercase;
@@ -599,15 +606,16 @@ export const HabitTracker = () => {
         .calendar-grid-body {
           display: grid;
           grid-template-columns: repeat(7, 1fr);
-          gap: 6px;
+          gap: 4px;
         }
 
         .calendar-day-cell {
-          aspect-ratio: 1;
+          width: 28px;
+          height: 28px;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 0.8rem;
+          font-size: 0.7rem;
           font-weight: 500;
           border-radius: var(--border-radius-sm);
           position: relative;
@@ -630,15 +638,15 @@ export const HabitTracker = () => {
         }
 
         .active-cell.completed {
-          background-color: rgba(82, 183, 136, 0.15);
-          border-color: rgba(82, 183, 136, 0.4);
+          background-color: rgba(82, 183, 136, 0.12);
+          border-color: rgba(82, 183, 136, 0.3);
           color: var(--accent-success);
           font-weight: 600;
         }
         .active-cell.completed:hover {
           background-color: var(--accent-success);
           border-color: var(--accent-success);
-          color: #0c0d0e;
+          color: #ffffff;
         }
 
         .today-cell {
@@ -649,14 +657,14 @@ export const HabitTracker = () => {
 
         .completed-glow {
           position: absolute;
-          width: 6px;
-          height: 6px;
+          width: 4px;
+          height: 4px;
           border-radius: 50%;
           background-color: var(--accent-success);
-          bottom: 4px;
+          bottom: 3px;
         }
         .active-cell.completed:hover .completed-glow {
-          background-color: #0c0d0e;
+          background-color: #ffffff;
         }
       `}</style>
     </div>

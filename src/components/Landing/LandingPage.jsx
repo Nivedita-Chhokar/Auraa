@@ -89,7 +89,7 @@ export const LandingPage = () => {
         </div>
         
         <div className="hero-footer">
-          <span>Aura © 2026. Aesthetic & Minimalist.</span>
+          <span>Auraa © 2026. Aesthetic & Minimalist.</span>
         </div>
       </div>
 
