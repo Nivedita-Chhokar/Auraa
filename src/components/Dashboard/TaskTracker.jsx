@@ -57,8 +57,24 @@ export const TaskTracker = () => {
 
   return (
     <div className="tasks-section fade-in">
+      {/* Header Panel - Standardized Page Title & Subtitle */}
+      <div className="section-header">
+        <div>
+          <h2>Daily Intentions & Tasks</h2>
+          <p>Plan daily checklist items and observe how actions support your long-term goals.</p>
+        </div>
+        <button 
+          onClick={() => setShowAddForm(!showAddForm)} 
+          className="btn-btn btn-primary"
+          style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+        >
+          <Plus size={14} />
+          <span>Add Task</span>
+        </button>
+      </div>
+
       {/* Date Switcher Panel */}
-      <div className="date-navigation aura-card">
+      <div className="date-navigation aura-card" style={{ marginTop: '16px' }}>
         <button onClick={() => shiftDate(-1)} className="btn-icon nav-date-btn" style={{ width: '28px', height: '28px' }}>
           <ArrowLeft size={14} />
         </button>
@@ -88,22 +104,6 @@ export const TaskTracker = () => {
         <div className="progress-bar-track">
           <div className="progress-bar-fill" style={{ width: `${progressPercent}%`, backgroundColor: 'var(--accent-primary)' }} />
         </div>
-      </div>
-
-      {/* Header Panel */}
-      <div className="section-header" style={{ marginTop: '20px' }}>
-        <div>
-          <h2>Intention Checklist</h2>
-          <p>List tasks that require focus today. Link them to life visions to gauge progress.</p>
-        </div>
-        <button 
-          onClick={() => setShowAddForm(!showAddForm)} 
-          className="btn-btn btn-primary"
-          style={{ padding: '6px 12px', fontSize: '0.8rem' }}
-        >
-          <Plus size={14} />
-          <span>Add Task</span>
-        </button>
       </div>
 
       {showAddForm && (

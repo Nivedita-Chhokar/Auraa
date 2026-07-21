@@ -165,11 +165,11 @@ input::placeholder, textarea::placeholder {
 .dashboard-layout {
   display: flex;
   flex-direction: column;
-  max-width: 1200px;
+  max-width: 1040px;
   width: 100%;
   margin: 0 auto;
-  padding: 80px 24px 32px; /* reduced top padding */
-  gap: 20px; /* reduced gap */
+  padding: 80px 24px 32px;
+  gap: 20px;
   flex-grow: 1;
   z-index: 1;
 }
@@ -179,7 +179,7 @@ input::placeholder, textarea::placeholder {
   background-color: var(--bg-secondary);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-md);
-  padding: 16px 20px; /* reduced padding from 24px */
+  padding: 16px 20px;
   box-shadow: var(--shadow-sm);
   transition: var(--transition-smooth);
 }
@@ -194,12 +194,15 @@ input::placeholder, textarea::placeholder {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 8px 16px; /* condensed padding */
+  padding: 8px 16px;
   font-size: 0.85rem;
   font-weight: 500;
   border-radius: var(--border-radius-sm);
   transition: var(--transition-smooth);
   white-space: nowrap;
+}
+.btn-btn:active {
+  transform: scale(0.97);
 }
 
 .btn-primary {

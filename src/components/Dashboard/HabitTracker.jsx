@@ -14,6 +14,41 @@ export const HabitTracker = () => {
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
 
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  // Helper function to evaluate strict day status: 'completed', 'today-pending', 'missed', 'future', 'before-creation', 'not-due'
+  const getDayStatus = (habit, dateStr) => {
+    const isCompleted = habit.history && habit.history.includes(dateStr);
+    if (isCompleted) return 'completed';
+
+    if (dateStr > todayStr) return 'future';
+    if (dateStr === todayStr) return 'today-pending';
+
+    // Determine creation date
+    let createdDateStr = todayStr;
+    if (habit.createdAt) {
+      createdDateStr = habit.createdAt.split('T')[0];
+    } else if (habit.history && habit.history.length > 0) {
+      const sorted = [...habit.history].sort();
+      createdDateStr = sorted[0];
+    }
+
+    // Days before creation are neutral
+    if (dateStr < createdDateStr) return 'before-creation';
+
+    // Frequency check for past dates
+    if (habit.frequency === 'Weekly') {
+      const createdDayOfWeek = new Date(createdDateStr).getDay();
+      const currentDayOfWeek = new Date(dateStr).getDay();
+      if (currentDayOfWeek !== createdDayOfWeek) {
+        return 'not-due';
+      }
+    }
+
+    // Strictly past, on/after creation date, due, and not completed
+    return 'missed';
+  };
+
   // Generate list of the past 7 days for the quick list
   const getPastSevenDays = () => {
     const days = [];
@@ -96,7 +131,6 @@ export const HabitTracker = () => {
       setExpandedCalendarHabitId(null);
     } else {
       setExpandedCalendarHabitId(habitId);
-      // Reset calendar focus to current month
       setCurrentYear(new Date().getFullYear());
       setCurrentMonth(new Date().getMonth());
     }
@@ -104,25 +138,27 @@ export const HabitTracker = () => {
 
   return (
     <div className="habits-section fade-in">
-      {/* Stats Summary Widgets */}
-      <div className="stats-row grid-3">
-        <div className="aura-card stat-card">
-          <div className="stat-label">Active Habits</div>
-          <div className="stat-value">{totalHabits}</div>
-          <div className="stat-desc">Daily actions building identity</div>
-        </div>
-        <div className="aura-card stat-card">
-          <div className="stat-label">Total Current Streaks</div>
-          <div className="stat-value text-accent">
-            <Flame size={20} className="inline-icon flame-icon" />
-            <span>{activeStreaksCount} Days</span>
+      {/* Stat Cards Hierarchy - Asymmetric Hero Grid */}
+      <div className="stats-hero-layout">
+        <div className="aura-card stat-card-hero">
+          <div className="stat-hero-label">Current streak</div>
+          <div className="stat-hero-value">
+            {activeStreaksCount} <span className="stat-unit">days</span>
           </div>
-          <div className="stat-desc">Consecutive days active</div>
+          <div className="stat-hero-desc">Combined across active habits</div>
         </div>
-        <div className="aura-card stat-card">
-          <div className="stat-label">Personal Best Streak</div>
-          <div className="stat-value text-success">{bestStreak} Days</div>
-          <div className="stat-desc">Longest streak recorded</div>
+
+        <div className="stats-side-stack">
+          <div className="aura-card stat-card-sub">
+            <div className="stat-sub-label">Active habits</div>
+            <div className="stat-sub-value">{totalHabits}</div>
+          </div>
+          <div className="aura-card stat-card-sub">
+            <div className="stat-sub-label">Best single-habit streak</div>
+            <div className="stat-sub-value">
+              {bestStreak} <span className="stat-unit-sm">days</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -203,129 +239,154 @@ export const HabitTracker = () => {
           </button>
         </div>
       ) : (
-        <div className="habits-list" style={{ marginTop: '12px' }}>
-          {habitsWithStreaks.map(habit => {
-            const mappedGoal = goals.find(g => g.id === habit.goalId);
-            const isCalendarExpanded = expandedCalendarHabitId === habit.id;
+        <>
+          <div className="habits-list" style={{ marginTop: '12px' }}>
+            {habitsWithStreaks.map(habit => {
+              const mappedGoal = goals.find(g => g.id === habit.goalId);
+              const isCalendarExpanded = expandedCalendarHabitId === habit.id;
 
-            return (
-              <div key={habit.id} className="aura-card habit-item-card fade-in">
-                <div className="habit-item-main">
-                  {/* Habit details */}
-                  <div className="habit-info">
-                    <div>
-                      <h3 className="habit-title">{habit.title}</h3>
-                      <div className="habit-meta">
-                        <span className="habit-freq">{habit.frequency}</span>
-                        {mappedGoal && (
-                          <span className="badge badge-goal" style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                            <Target size={9} />
-                            <span>{mappedGoal.title}</span>
-                          </span>
-                        )}
+              return (
+                <div key={habit.id} className="aura-card habit-item-card fade-in">
+                  <div className="habit-item-main">
+                    {/* Habit details */}
+                    <div className="habit-info">
+                      <div>
+                        <h3 className="habit-title">{habit.title}</h3>
+                        <div className="habit-meta">
+                          <span className="habit-freq">{habit.frequency}</span>
+                          {mappedGoal && (
+                            <span className="badge badge-goal" style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                              <Target size={9} />
+                              <span>{mappedGoal.title}</span>
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    
-                    <div className="habit-streaks-indicators">
-                      <div className="streak-badge" title="Current Streak">
-                        <Flame size={12} className="streak-icon active-flame" />
-                        <span>{habit.streaks.current}d</span>
-                      </div>
-                      <button 
-                        onClick={() => toggleExpandCalendar(habit.id)}
-                        className={`btn-icon habit-compact-btn ${isCalendarExpanded ? 'calendar-expanded-active' : ''}`}
-                        title="View Monthly Calendar"
-                      >
-                        <Calendar size={13} />
-                      </button>
-                      <button 
-                        onClick={() => {
-                          if (confirm('Delete this habit permanently? Data history will be lost.')) {
-                            deleteHabit(habit.id);
-                          }
-                        }} 
-                        className="habit-delete-btn"
-                        title="Delete Habit"
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
-                  </div>
+                      
+                      <div className="habit-streaks-indicators">
+                        <div className="streak-badge" title="Current Habit Streak">
+                          <Flame size={12} className="streak-icon active-flame" />
+                          <span>{habit.streaks.current}d</span>
+                        </div>
 
-                  {/* Calendar tracker row (7 day quick view) */}
-                  <div className="habit-matrix">
-                    {pastDays.map(day => {
-                      const isCompleted = habit.history.includes(day.dateStr);
-                      const isToday = day.dateStr === new Date().toISOString().split('T')[0];
-                      return (
-                        <div 
-                          key={day.dateStr} 
-                          className={`matrix-day ${isToday ? 'today' : ''}`}
-                        >
-                          <span className="day-label">{day.dayName}</span>
-                          <button
-                            onClick={() => toggleHabit(habit.id, day.dateStr)}
-                            className={`matrix-toggle ${isCompleted ? 'completed' : ''}`}
-                            title={`Toggle ${habit.title} for ${day.dateStr}`}
+                        {/* Action buttons with safety spacing buffer */}
+                        <div className="habit-actions-group">
+                          <button 
+                            onClick={() => toggleExpandCalendar(habit.id)}
+                            className={`btn-icon habit-compact-btn ${isCalendarExpanded ? 'calendar-expanded-active' : ''}`}
+                            title="View Monthly Calendar Log"
                           >
-                            {isCompleted ? <Check size={11} /> : <span className="day-num">{day.dayNum}</span>}
+                            <Calendar size={13} />
+                          </button>
+                          <button 
+                            onClick={() => {
+                              if (confirm('Delete this habit permanently? Data history will be lost.')) {
+                                deleteHabit(habit.id);
+                              }
+                            }} 
+                            className="btn-icon habit-delete-btn"
+                            title="Delete Habit"
+                          >
+                            <Trash2 size={13} />
                           </button>
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Expanded Month View Calendar */}
-                {isCalendarExpanded && (
-                  <div className="habit-calendar-expanded fade-in">
-                    <div className="calendar-control-row">
-                      <h4>Monthly Completion Log</h4>
-                      <div className="calendar-switcher">
-                        <button onClick={handlePrevMonth} className="btn-icon month-nav-btn">
-                          <ChevronLeft size={12} />
-                        </button>
-                        <span className="calendar-month-year">{monthName} {currentYear}</span>
-                        <button onClick={handleNextMonth} className="btn-icon month-nav-btn">
-                          <ChevronRight size={12} />
-                        </button>
                       </div>
                     </div>
 
-                    <div className="calendar-grid-header">
-                      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
-                        <div key={d} className="calendar-header-cell">{d[0]}</div>
-                      ))}
-                    </div>
-
-                    <div className="calendar-grid-body">
-                      {calendarDays.map(cell => {
-                        if (cell.isEmpty) {
-                          return <div key={cell.id} className="calendar-day-cell empty-cell" />;
-                        }
-
-                        const isCompleted = habit.history.includes(cell.dateStr);
-                        const isToday = cell.dateStr === new Date().toISOString().split('T')[0];
+                    {/* 7-Day Matrix with Refined Day-Status Logic */}
+                    <div className="habit-matrix">
+                      {pastDays.map(day => {
+                        const status = getDayStatus(habit, day.dateStr);
+                        const isToday = day.dateStr === todayStr;
+                        const isInteractive = status === 'completed' || status === 'today-pending' || status === 'missed';
 
                         return (
-                          <button
-                            key={cell.id}
-                            onClick={() => toggleHabit(habit.id, cell.dateStr)}
-                            className={`calendar-day-cell active-cell ${isCompleted ? 'completed' : ''} ${isToday ? 'today-cell' : ''}`}
-                            title={cell.dateStr}
+                          <div 
+                            key={day.dateStr} 
+                            className={`matrix-day ${isToday ? 'today' : ''}`}
                           >
-                            <span>{cell.dayNum}</span>
-                            {isCompleted && <div className="completed-glow" />}
-                          </button>
+                            <span className="day-label">{day.dayName}</span>
+                            <button
+                              onClick={() => {
+                                if (isInteractive) toggleHabit(habit.id, day.dateStr);
+                              }}
+                              className={`matrix-toggle ${status}`}
+                              title={`${habit.title} (${day.dateStr}): ${status}`}
+                              disabled={!isInteractive}
+                            >
+                              {status === 'completed' && <Check size={11} />}
+                              {status === 'missed' && <div className="missed-inner-ring" />}
+                              {status === 'today-pending' && <span className="day-num">{day.dayNum}</span>}
+                              {(status === 'future' || status === 'before-creation' || status === 'not-due') && null}
+                            </button>
+                          </div>
                         );
                       })}
                     </div>
                   </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+
+                  {/* Expanded Month View Calendar */}
+                  {isCalendarExpanded && (
+                    <div className="habit-calendar-expanded fade-in">
+                      <div className="calendar-control-row">
+                        <h4>Monthly Completion Log</h4>
+                        <div className="calendar-switcher">
+                          <button onClick={handlePrevMonth} className="btn-icon month-nav-btn">
+                            <ChevronLeft size={12} />
+                          </button>
+                          <span className="calendar-month-year">{monthName} {currentYear}</span>
+                          <button onClick={handleNextMonth} className="btn-icon month-nav-btn">
+                            <ChevronRight size={12} />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="calendar-grid-header">
+                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
+                          <div key={d} className="calendar-header-cell">{d[0]}</div>
+                        ))}
+                      </div>
+
+                      <div className="calendar-grid-body">
+                        {calendarDays.map(cell => {
+                          if (cell.isEmpty) {
+                            return <div key={cell.id} className="calendar-day-cell empty-cell" />;
+                          }
+
+                          const status = getDayStatus(habit, cell.dateStr);
+                          const isToday = cell.dateStr === todayStr;
+                          const isInteractive = status === 'completed' || status === 'today-pending' || status === 'missed';
+
+                          return (
+                            <button
+                              key={cell.id}
+                              onClick={() => {
+                                if (isInteractive) toggleHabit(habit.id, cell.dateStr);
+                              }}
+                              className={`calendar-day-cell active-cell ${status} ${isToday ? 'today-cell' : ''}`}
+                              title={`${cell.dateStr}: ${status}`}
+                              disabled={!isInteractive}
+                            >
+                              <span>{cell.dayNum}</span>
+                              {status === 'completed' && <div className="completed-glow" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Semantics Legend */}
+          <div className="habits-legend">
+            <span className="legend-item"><span className="dot dot-done" /> Done</span>
+            <span className="legend-item"><span className="dot dot-missed" /> Missed</span>
+            <span className="legend-item"><span className="dot dot-future" /> Not yet due / Untracked</span>
+          </div>
+        </>
       )}
 
       <style>{`
@@ -333,31 +394,81 @@ export const HabitTracker = () => {
           width: 100%;
         }
 
-        .stat-card {
-          padding: 12px 16px;
-          gap: 4px;
+        /* Stat Cards Hierarchy - Asymmetric Hero Grid */
+        .stats-hero-layout {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 12px;
+        }
+        @media (min-width: 768px) {
+          .stats-hero-layout {
+            grid-template-columns: 1.6fr 1fr;
+          }
         }
 
-        .stat-label {
+        .stat-card-hero {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          padding: 20px 24px;
+          border-color: rgba(142, 148, 242, 0.25);
+          background-color: var(--bg-secondary);
+        }
+
+        .stat-hero-label {
+          font-size: 0.85rem;
+          color: var(--text-secondary);
+          font-weight: 500;
+        }
+
+        .stat-hero-value {
+          font-size: 2.4rem;
+          font-weight: 700;
+          color: var(--text-primary);
+          line-height: 1.1;
+          margin: 6px 0 4px;
+        }
+
+        .stat-unit {
+          font-size: 1.4rem;
+          font-weight: 500;
+          color: var(--text-secondary);
+        }
+
+        .stat-hero-desc {
+          font-size: 0.75rem;
+          color: var(--text-muted);
+        }
+
+        .stats-side-stack {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .stat-card-sub {
+          padding: 12px 18px;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+        }
+
+        .stat-sub-label {
           font-size: 0.75rem;
           color: var(--text-secondary);
         }
 
-        .stat-value {
+        .stat-sub-value {
           font-size: 1.4rem;
           font-weight: 700;
-          display: flex;
-          align-items: center;
-          gap: 6px;
+          color: var(--text-primary);
+          margin-top: 2px;
         }
 
-        .flame-icon {
-          color: var(--accent-warning);
-        }
-
-        .stat-desc {
-          font-size: 0.7rem;
-          color: var(--text-muted);
+        .stat-unit-sm {
+          font-size: 0.9rem;
+          font-weight: 500;
+          color: var(--text-secondary);
         }
 
         .habit-form-card {
@@ -371,14 +482,14 @@ export const HabitTracker = () => {
         .habits-list {
           display: flex;
           flex-direction: column;
-          gap: 12px; /* reduced from 18px */
+          gap: 12px;
         }
 
         .habit-item-card {
           background-color: var(--bg-secondary);
           border: 1px solid var(--border-color);
           border-radius: var(--border-radius-md);
-          padding: 12px 16px; /* condensed padding from 24px */
+          padding: 12px 16px;
           box-shadow: var(--shadow-sm);
           transition: var(--transition-smooth);
         }
@@ -389,7 +500,7 @@ export const HabitTracker = () => {
         .habit-item-main {
           display: flex;
           flex-direction: column;
-          gap: 12px; /* condensed from 20px */
+          gap: 12px;
         }
         @media (min-width: 768px) {
           .habit-item-main {
@@ -408,7 +519,7 @@ export const HabitTracker = () => {
         }
 
         .habit-title {
-          font-size: 0.95rem; /* condensed from 1.1rem */
+          font-size: 0.95rem;
           font-weight: 600;
           color: var(--text-primary);
         }
@@ -432,7 +543,7 @@ export const HabitTracker = () => {
         .habit-streaks-indicators {
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 12px;
         }
 
         .streak-badge {
@@ -458,20 +569,27 @@ export const HabitTracker = () => {
           100% { transform: scale(1); opacity: 0.8; }
         }
 
+        .habit-actions-group {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          margin-left: 4px;
+        }
+
         .habit-compact-btn {
-          width: 26px;
-          height: 26px;
+          width: 28px;
+          height: 28px;
         }
 
         .habit-delete-btn {
+          width: 28px;
+          height: 28px;
           color: var(--text-muted);
-          padding: 4px;
-          border-radius: var(--border-radius-sm);
-          transition: var(--transition-smooth);
         }
         .habit-delete-btn:hover {
           color: var(--accent-danger);
-          background-color: rgba(224, 122, 95, 0.08);
+          background-color: rgba(224, 122, 95, 0.1);
+          border-color: rgba(224, 122, 95, 0.3);
         }
 
         .calendar-expanded-active {
@@ -480,13 +598,13 @@ export const HabitTracker = () => {
           background-color: rgba(142, 148, 242, 0.05);
         }
 
-        /* 7 Day Matrix Row - Condensed */
+        /* 7 Day Matrix Row - Status Semantics */
         .habit-matrix {
           display: flex;
           gap: 6px;
           justify-content: space-between;
           background-color: var(--bg-tertiary);
-          padding: 6px 12px; /* condensed from 10px 16px */
+          padding: 6px 12px;
           border-radius: var(--border-radius-sm);
           border: 1px solid var(--border-color);
         }
@@ -496,7 +614,7 @@ export const HabitTracker = () => {
           flex-direction: column;
           align-items: center;
           gap: 4px;
-          width: 32px; /* condensed from 38px */
+          width: 32px;
         }
 
         .matrix-day.today .day-label {
@@ -511,7 +629,7 @@ export const HabitTracker = () => {
         }
 
         .matrix-toggle {
-          width: 26px; /* shrunk from 32px */
+          width: 26px;
           height: 26px;
           border-radius: 50%;
           background-color: var(--bg-secondary);
@@ -523,18 +641,44 @@ export const HabitTracker = () => {
           transition: var(--transition-smooth);
         }
 
-        .matrix-toggle:hover {
-          border-color: var(--accent-primary);
-          background-color: var(--bg-tertiary);
-        }
-
+        /* Status 1: Completed (Dominant Green Fill) */
         .matrix-toggle.completed {
           background-color: var(--accent-success);
           border-color: var(--accent-success);
           color: #ffffff;
         }
-        body.light-theme .matrix-toggle.completed {
-          color: #ffffff;
+
+        /* Status 2: Missed (Subtle translucent red ring, thin muted border) */
+        .matrix-toggle.missed {
+          background-color: rgba(224, 122, 95, 0.06);
+          border: 1px solid rgba(224, 122, 95, 0.35);
+          color: var(--accent-danger);
+        }
+        .missed-inner-ring {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          border: 1px solid rgba(224, 122, 95, 0.6);
+        }
+
+        /* Status 3: Today Pending (Interactive outline) */
+        .matrix-toggle.today-pending {
+          background-color: var(--bg-secondary);
+          border: 1px solid var(--accent-primary);
+          color: var(--accent-primary);
+        }
+        .matrix-toggle.today-pending:hover {
+          background-color: rgba(142, 148, 242, 0.08);
+        }
+
+        /* Status 4, 5, 6: Future / Before Creation / Not Due (Muted, recessed, non-interactive) */
+        .matrix-toggle.future,
+        .matrix-toggle.before-creation,
+        .matrix-toggle.not-due {
+          background-color: var(--bg-secondary);
+          border: 1px solid var(--border-color);
+          opacity: 0.25;
+          cursor: default;
         }
 
         .day-num {
@@ -542,7 +686,7 @@ export const HabitTracker = () => {
           font-weight: 500;
         }
 
-        /* Expanded Calendar styles - Compact Fixed Small Boxes */
+        /* Expanded Calendar styles */
         .habit-calendar-expanded {
           margin-top: 14px;
           padding-top: 14px;
@@ -632,27 +776,33 @@ export const HabitTracker = () => {
           border: 1px solid var(--border-color);
           color: var(--text-secondary);
         }
-        .active-cell:hover {
-          border-color: var(--accent-primary);
-          color: var(--text-primary);
-        }
 
         .active-cell.completed {
-          background-color: rgba(82, 183, 136, 0.12);
-          border-color: rgba(82, 183, 136, 0.3);
-          color: var(--accent-success);
-          font-weight: 600;
-        }
-        .active-cell.completed:hover {
           background-color: var(--accent-success);
           border-color: var(--accent-success);
           color: #ffffff;
+          font-weight: 600;
         }
 
-        .today-cell {
-          border-color: var(--accent-primary) !important;
-          color: var(--accent-primary) !important;
+        .active-cell.missed {
+          background-color: rgba(224, 122, 95, 0.06);
+          border: 1px solid rgba(224, 122, 95, 0.35);
+          color: var(--accent-danger);
+        }
+
+        .active-cell.today-pending {
+          border-color: var(--accent-primary);
+          color: var(--accent-primary);
           font-weight: 700;
+        }
+
+        .active-cell.future,
+        .active-cell.before-creation,
+        .active-cell.not-due {
+          opacity: 0.25;
+          background-color: var(--bg-secondary);
+          border: 1px solid var(--border-color);
+          cursor: default;
         }
 
         .completed-glow {
@@ -660,11 +810,45 @@ export const HabitTracker = () => {
           width: 4px;
           height: 4px;
           border-radius: 50%;
-          background-color: var(--accent-success);
+          background-color: #ffffff;
           bottom: 3px;
         }
-        .active-cell.completed:hover .completed-glow {
-          background-color: #ffffff;
+
+        /* Semantics Legend Component */
+        .habits-legend {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          margin-top: 14px;
+          font-size: 0.75rem;
+          color: var(--text-secondary);
+        }
+
+        .legend-item {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .dot {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          display: inline-block;
+        }
+
+        .dot-done {
+          background-color: var(--accent-success);
+        }
+
+        .dot-missed {
+          background-color: rgba(224, 122, 95, 0.06);
+          border: 1px solid rgba(224, 122, 95, 0.5);
+        }
+
+        .dot-future {
+          background-color: var(--border-color);
+          opacity: 0.4;
         }
       `}</style>
     </div>

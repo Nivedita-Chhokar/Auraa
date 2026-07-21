@@ -1,6 +1,6 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
-import { Target, CheckCircle2, Flame, Award, HelpCircle } from 'lucide-react';
+import { Target, CheckCircle2, Flame, Award, HelpCircle, Calendar } from 'lucide-react';
 
 export const Reports = () => {
   const { tasks, habits, goals } = useApp();
@@ -48,6 +48,60 @@ export const Reports = () => {
   const taskStats = getTaskStats();
   const habitStats = getHabitStats();
 
+  // GitHub Style Contribution Heatmap Generator (Past 16 Weeks)
+  const getContributionData = () => {
+    const today = new Date();
+    const endDayOfWeek = today.getDay(); // 0 = Sun, 6 = Sat
+    
+    // 16 weeks (112 days) ending on Saturday of current week
+    const days = [];
+    const totalDays = 16 * 7; 
+    
+    const startDate = new Date();
+    startDate.setDate(today.getDate() - (totalDays - 1 - (6 - endDayOfWeek)));
+
+    for (let i = 0; i < totalDays; i++) {
+      const d = new Date(startDate);
+      d.setDate(startDate.getDate() + i);
+      const dateStr = d.toISOString().split('T')[0];
+      
+      // Calculate total accomplishments (completed tasks + completed habits)
+      const taskCount = tasks.filter(t => t.date === dateStr && t.isCompleted).length;
+      let habitCount = 0;
+      habits.forEach(h => {
+        if (h.history && h.history.includes(dateStr)) habitCount++;
+      });
+
+      const totalCount = taskCount + habitCount;
+      
+      let level = 0;
+      if (totalCount === 1) level = 1;
+      else if (totalCount === 2) level = 2;
+      else if (totalCount >= 3 && totalCount <= 4) level = 3;
+      else if (totalCount >= 5) level = 4;
+
+      days.push({
+        dateStr,
+        dayOfWeek: d.getDay(),
+        totalCount,
+        level,
+        formattedDate: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      });
+    }
+
+    // Group into 16 weeks (columns) x 7 days (rows)
+    const weeks = [];
+    for (let w = 0; w < 16; w++) {
+      weeks.push(days.slice(w * 7, (w + 1) * 7));
+    }
+
+    const totalContributions = days.reduce((sum, d) => sum + d.totalCount, 0);
+
+    return { weeks, totalContributions };
+  };
+
+  const contributionData = getContributionData();
+
   // Goal Progress Ratings
   const getGoalBreakdown = () => {
     return goals.map(goal => {
@@ -84,13 +138,9 @@ export const Reports = () => {
 
   const goalBreakdown = getGoalBreakdown();
 
-  // General Summary Metrics
-  const totalTasksCompleted = tasks.filter(t => t.isCompleted).length;
-  const overallTaskRatio = tasks.length > 0 ? Math.round((totalTasksCompleted / tasks.length) * 100) : 0;
-
   // Render Inline SVG Bar Chart
   const renderBarChart = () => {
-    const chartHeight = 160;
+    const chartHeight = 150;
     const chartWidth = 460;
     const paddingLeft = 30;
     const paddingBottom = 25;
@@ -101,26 +151,21 @@ export const Reports = () => {
 
     return (
       <svg width="100%" height="100%" viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="svg-chart">
-        {/* Y Axis Grid Lines */}
         <line x1={paddingLeft} y1={usableHeight * 0} x2={chartWidth} y2={usableHeight * 0} stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4 4" />
         <line x1={paddingLeft} y1={usableHeight * 0.5} x2={chartWidth} y2={usableHeight * 0.5} stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4 4" />
         <line x1={paddingLeft} y1={usableHeight} x2={chartWidth} y2={usableHeight} stroke="var(--border-color)" strokeWidth="1" />
         
-        {/* Axis Labels */}
         <text x="5" y="12" fill="var(--text-muted)" fontSize="10">100%</text>
         <text x="5" y={(usableHeight / 2) + 4} fill="var(--text-muted)" fontSize="10">50%</text>
         <text x="5" y={usableHeight + 4} fill="var(--text-muted)" fontSize="10">0%</text>
 
-        {/* Bars */}
         {taskStats.map((item, idx) => {
           const x = paddingLeft + gap + idx * (barWidth + gap);
-          // Height mapping
           const barHeight = (item.rate / 100) * usableHeight;
           const y = usableHeight - barHeight;
 
           return (
             <g key={item.date} className="chart-bar-group">
-              {/* Background Track */}
               <rect
                 x={x}
                 y={0}
@@ -130,17 +175,15 @@ export const Reports = () => {
                 fill="var(--bg-tertiary)"
                 opacity="0.5"
               />
-              {/* Active Fill Bar */}
               <rect
                 x={x}
                 y={y}
                 width={barWidth}
-                height={Math.max(barHeight, 4)} // at least minor stroke visible
+                height={Math.max(barHeight, 4)}
                 rx="4"
                 fill="var(--accent-primary)"
                 className="anim-bar"
               />
-              {/* X Label */}
               <text
                 x={x + barWidth / 2}
                 y={chartHeight - 6}
@@ -150,7 +193,6 @@ export const Reports = () => {
               >
                 {item.label}
               </text>
-              {/* Tooltip Hover Helper */}
               <title>{`${item.completed}/${item.total} Completed (${item.rate}%)`}</title>
             </g>
           );
@@ -161,7 +203,7 @@ export const Reports = () => {
 
   // Render Inline SVG Area Line Chart
   const renderAreaChart = () => {
-    const chartHeight = 160;
+    const chartHeight = 150;
     const chartWidth = 460;
     const paddingLeft = 30;
     const paddingBottom = 25;
@@ -169,14 +211,12 @@ export const Reports = () => {
     const usableHeight = chartHeight - paddingBottom;
     const colWidth = usableWidth / 6;
 
-    // Generate coordinate pairs
     const points = habitStats.map((item, idx) => {
       const x = paddingLeft + idx * colWidth;
       const y = usableHeight - (item.rate / 100) * usableHeight;
       return { x, y, label: item.label, rate: item.rate };
     });
 
-    // Create Path Strings
     let linePath = '';
     let areaPath = '';
 
@@ -201,27 +241,19 @@ export const Reports = () => {
           </linearGradient>
         </defs>
 
-        {/* Y Axis Grid Lines */}
         <line x1={paddingLeft} y1={usableHeight * 0} x2={chartWidth} y2={usableHeight * 0} stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4 4" />
         <line x1={paddingLeft} y1={usableHeight * 0.5} x2={chartWidth} y2={usableHeight * 0.5} stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4 4" />
         <line x1={paddingLeft} y1={usableHeight} x2={chartWidth} y2={usableHeight} stroke="var(--border-color)" strokeWidth="1" />
 
-        {/* Axis Labels */}
         <text x="5" y="12" fill="var(--text-muted)" fontSize="10">100%</text>
         <text x="5" y={(usableHeight / 2) + 4} fill="var(--text-muted)" fontSize="10">50%</text>
         <text x="5" y={usableHeight + 4} fill="var(--text-muted)" fontSize="10">0%</text>
 
-        {/* Area fill */}
-        {points.length > 0 && (
-          <path d={areaPath} fill="url(#chartGradient)" />
-        )}
-
-        {/* Trend Line */}
+        {points.length > 0 && <path d={areaPath} fill="url(#chartGradient)" />}
         {points.length > 0 && (
           <path d={linePath} fill="none" stroke="var(--accent-success)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
         )}
 
-        {/* Coordinate dot markers */}
         {points.map((pt, idx) => (
           <g key={idx}>
             <circle
@@ -257,8 +289,55 @@ export const Reports = () => {
         </div>
       </div>
 
-      {/* Grid of charts */}
-      <div className="grid-2" style={{ marginTop: '24px' }}>
+      {/* TOP SECTION: GitHub Style Contribution Heatmap */}
+      <div className="aura-card heatmap-card" style={{ marginTop: '16px' }}>
+        <div className="heatmap-header">
+          <div>
+            <h3>Global Consistency Heatmap</h3>
+            <p>{contributionData.totalContributions} total accomplishments logged across the past 16 weeks</p>
+          </div>
+          <div className="heatmap-legend">
+            <span>Less</span>
+            <div className="heatmap-cell level-0" />
+            <div className="heatmap-cell level-1" />
+            <div className="heatmap-cell level-2" />
+            <div className="heatmap-cell level-3" />
+            <div className="heatmap-cell level-4" />
+            <span>More</span>
+          </div>
+        </div>
+
+        <div className="heatmap-scroll-container">
+          <div className="heatmap-grid">
+            <div className="heatmap-day-labels">
+              <span></span>
+              <span>Mon</span>
+              <span></span>
+              <span>Wed</span>
+              <span></span>
+              <span>Fri</span>
+              <span></span>
+            </div>
+
+            <div className="heatmap-weeks-row">
+              {contributionData.weeks.map((week, wIdx) => (
+                <div key={wIdx} className="heatmap-week-column">
+                  {week.map((day) => (
+                    <div
+                      key={day.dateStr}
+                      className={`heatmap-cell level-${day.level}`}
+                      title={`${day.formattedDate}: ${day.totalCount} completed ${day.totalCount === 1 ? 'action' : 'actions'}`}
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Grid of 7-day charts */}
+      <div className="grid-2" style={{ marginTop: '16px' }}>
         <div className="aura-card chart-container-card">
           <div className="chart-header">
             <h3>Intention Completion Rates</h3>
@@ -289,14 +368,14 @@ export const Reports = () => {
       </div>
 
       {/* Objectives Breakdown Grid */}
-      <div className="reports-bottom aura-card" style={{ marginTop: '24px' }}>
+      <div className="reports-bottom aura-card" style={{ marginTop: '16px' }}>
         <div className="chart-header">
           <h3>Goal Compilation Breakdowns</h3>
           <p>Compound percentage fulfillment score per grand vision</p>
         </div>
 
         {goals.length === 0 ? (
-          <div className="chart-empty" style={{ padding: '40px 0' }}>
+          <div className="chart-empty" style={{ padding: '30px 0' }}>
             No goals available to map. Create them in the Goals portal.
           </div>
         ) : (
@@ -308,7 +387,6 @@ export const Reports = () => {
                   <span className="row-title">{g.title}</span>
                 </div>
 
-                {/* Progress bar and score */}
                 <div className="row-bar-section">
                   <div className="progress-bar-track row-bar-track">
                     <div 
@@ -332,24 +410,141 @@ export const Reports = () => {
           width: 100%;
         }
 
+        /* GitHub Contribution Heatmap Styling */
+        .heatmap-card {
+          padding: 16px 20px;
+        }
+
+        .heatmap-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+          margin-bottom: 14px;
+          flex-wrap: wrap;
+          gap: 10px;
+        }
+
+        .heatmap-header h3 {
+          font-size: 1.05rem;
+        }
+
+        .heatmap-header p {
+          font-size: 0.75rem;
+          color: var(--text-secondary);
+        }
+
+        .heatmap-legend {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          font-size: 0.7rem;
+          color: var(--text-muted);
+        }
+
+        .heatmap-scroll-container {
+          overflow-x: auto;
+          padding-bottom: 4px;
+        }
+
+        .heatmap-grid {
+          display: flex;
+          gap: 8px;
+          align-items: flex-start;
+          min-width: max-content;
+        }
+
+        .heatmap-day-labels {
+          display: flex;
+          flex-direction: column;
+          gap: 3px;
+          font-size: 0.65rem;
+          color: var(--text-muted);
+          text-align: right;
+          padding-right: 4px;
+        }
+        .heatmap-day-labels span {
+          height: 11px;
+          line-height: 11px;
+        }
+
+        .heatmap-weeks-row {
+          display: flex;
+          gap: 3px;
+        }
+
+        .heatmap-week-column {
+          display: flex;
+          flex-direction: column;
+          gap: 3px;
+        }
+
+        .heatmap-cell {
+          width: 11px;
+          height: 11px;
+          border-radius: 2px;
+          transition: transform 0.15s ease, background-color 0.2s ease;
+          cursor: pointer;
+        }
+        .heatmap-cell:hover {
+          transform: scale(1.3);
+          z-index: 3;
+        }
+
+        .heatmap-cell.level-0 {
+          background-color: var(--bg-tertiary);
+          border: 1px solid var(--border-color);
+        }
+
+        .heatmap-cell.level-1 {
+          background-color: rgba(82, 183, 136, 0.25);
+          border: 1px solid rgba(82, 183, 136, 0.35);
+        }
+
+        .heatmap-cell.level-2 {
+          background-color: rgba(82, 183, 136, 0.55);
+        }
+
+        .heatmap-cell.level-3 {
+          background-color: rgba(82, 183, 136, 0.85);
+        }
+
+        .heatmap-cell.level-4 {
+          background-color: var(--accent-success);
+          box-shadow: 0 0 6px rgba(82, 183, 136, 0.4);
+        }
+
+        body.light-theme .heatmap-cell.level-1 {
+          background-color: rgba(27, 138, 90, 0.2);
+        }
+        body.light-theme .heatmap-cell.level-2 {
+          background-color: rgba(27, 138, 90, 0.45);
+        }
+        body.light-theme .heatmap-cell.level-3 {
+          background-color: rgba(27, 138, 90, 0.75);
+        }
+        body.light-theme .heatmap-cell.level-4 {
+          background-color: var(--accent-success);
+        }
+
+        /* General Charts Styling */
         .chart-container-card {
           display: flex;
           flex-direction: column;
-          gap: 16px;
+          gap: 12px;
         }
 
         .chart-header h3 {
-          font-size: 1.1rem;
+          font-size: 0.95rem;
         }
 
         .chart-header p {
-          font-size: 0.8rem;
+          font-size: 0.75rem;
           color: var(--text-secondary);
-          margin-top: 2px;
+          margin-top: 1px;
         }
 
         .chart-wrapper-div {
-          min-height: 180px;
+          min-height: 160px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -357,7 +552,7 @@ export const Reports = () => {
         }
 
         .chart-empty {
-          font-size: 0.85rem;
+          font-size: 0.8rem;
           color: var(--text-muted);
         }
 
@@ -382,15 +577,15 @@ export const Reports = () => {
         .goals-breakdown-list {
           display: flex;
           flex-direction: column;
-          gap: 16px;
-          margin-top: 20px;
+          gap: 12px;
+          margin-top: 14px;
         }
 
         .goal-progress-row {
           display: flex;
           flex-direction: column;
-          gap: 12px;
-          padding: 16px 0;
+          gap: 8px;
+          padding: 10px 0;
           border-bottom: 1px solid var(--border-color);
         }
         .goal-progress-row:last-child {
@@ -403,19 +598,19 @@ export const Reports = () => {
             flex-direction: row;
             justify-content: space-between;
             align-items: center;
-            gap: 24px;
+            gap: 20px;
           }
         }
 
         .row-detail {
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 10px;
           flex: 1;
         }
 
         .row-title {
-          font-size: 0.95rem;
+          font-size: 0.9rem;
           font-weight: 500;
           color: var(--text-primary);
         }
@@ -423,12 +618,12 @@ export const Reports = () => {
         .row-bar-section {
           display: flex;
           align-items: center;
-          gap: 16px;
+          gap: 12px;
           width: 100%;
         }
         @media (min-width: 768px) {
           .row-bar-section {
-            width: 320px;
+            width: 280px;
           }
         }
 
@@ -437,10 +632,10 @@ export const Reports = () => {
         }
 
         .row-pct {
-          font-size: 0.85rem;
+          font-size: 0.8rem;
           font-weight: 600;
           color: var(--text-primary);
-          width: 35px;
+          width: 32px;
           text-align: right;
         }
       `}</style>

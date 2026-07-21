@@ -8,6 +8,7 @@ export const MonthlyReview = () => {
   const currentMonthStr = new Date().toISOString().substring(0, 7); // YYYY-MM
   const [selectedMonth, setSelectedMonth] = useState(currentMonthStr);
   const [rating, setRating] = useState(3);
+  const [hoverRating, setHoverRating] = useState(0);
   const [achievements, setAchievements] = useState('');
   const [improvements, setImprovements] = useState('');
   const [learnings, setLearnings] = useState('');
@@ -87,6 +88,8 @@ export const MonthlyReview = () => {
     return date.toLocaleString('default', { month: 'long', year: 'numeric' });
   };
 
+  const displayRating = hoverRating || rating;
+
   return (
     <div className="review-section fade-in">
       <div className="section-header">
@@ -119,17 +122,19 @@ export const MonthlyReview = () => {
                   type="button"
                   key={star}
                   onClick={() => setRating(star)}
-                  className={`rating-star-btn ${rating >= star ? 'active' : ''}`}
+                  onMouseEnter={() => setHoverRating(star)}
+                  onMouseLeave={() => setHoverRating(0)}
+                  className={`rating-star-btn ${displayRating >= star ? 'active' : ''}`}
                 >
-                  <Star size={20} fill={rating >= star ? 'currentColor' : 'none'} />
+                  <Star size={20} fill={displayRating >= star ? 'currentColor' : 'none'} />
                 </button>
               ))}
               <span className="rating-text">
-                {rating === 1 && 'Challenging'}
-                {rating === 2 && 'Mediocre'}
-                {rating === 3 && 'Progressive'}
-                {rating === 4 && 'Highly Focused'}
-                {rating === 5 && 'Outstanding'}
+                {displayRating === 1 && 'Challenging'}
+                {displayRating === 2 && 'Mediocre'}
+                {displayRating === 3 && 'Progressive'}
+                {displayRating === 4 && 'Highly Focused'}
+                {displayRating === 5 && 'Outstanding'}
               </span>
             </div>
           </div>
