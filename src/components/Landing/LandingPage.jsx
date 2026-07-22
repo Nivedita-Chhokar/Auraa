@@ -1,38 +1,42 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Target, CheckCircle, Flame, Sparkles, User, Lock, ArrowRight } from 'lucide-react';
+import { Target, CheckCircle, Flame, Sparkles, User, Lock, ArrowRight, Mail } from 'lucide-react';
 
 export const LandingPage = () => {
   const { login, signup } = useApp();
   const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    // Muted artificial delay for premium interface feel
-    setTimeout(() => {
+    try {
       let result;
       if (isLogin) {
-        result = login(username, password);
+        result = await login(username, password);
       } else {
-        result = signup(username, password);
+        result = await signup(email, username, password);
       }
 
-      setLoading(false);
       if (!result.success) {
         setError(result.message);
       }
-    }, 600);
+    } catch (err) {
+      setError(err?.message || 'An error occurred during authentication.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const toggleAuthMode = () => {
     setIsLogin(!isLogin);
+    setEmail('');
     setUsername('');
     setPassword('');
     setError('');
@@ -108,14 +112,34 @@ export const LandingPage = () => {
           )}
 
           <form onSubmit={handleSubmit} className="auth-form">
+            {!isLogin && (
+              <div className="form-group">
+                <label className="form-label" htmlFor="email">Email Address</label>
+                <div className="input-with-icon">
+                  <Mail size={16} className="input-icon" />
+                  <input
+                    id="email"
+                    type="email"
+                    placeholder="e.g., alex@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="form-group">
-              <label className="form-label" htmlFor="username">Username</label>
+              <label className="form-label" htmlFor="username">
+                {isLogin ? 'Username or Email' : 'Username'}
+              </label>
               <div className="input-with-icon">
                 <User size={16} className="input-icon" />
                 <input
                   id="username"
                   type="text"
-                  placeholder="e.g., alex"
+                  placeholder={isLogin ? 'e.g., alex or alex@example.com' : 'e.g., alex'}
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required

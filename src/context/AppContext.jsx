@@ -1,10 +1,46 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '../supabaseClient';
 
 const AppContext = createContext();
 
+// Mapper functions to map database (snake_case) formats to Javascript (camelCase) formats
+const mapGoalFromDb = (dbGoal) => ({
+  id: dbGoal.id,
+  title: dbGoal.title,
+  description: dbGoal.description,
+  category: dbGoal.category,
+  createdAt: dbGoal.created_at,
+});
+
+const mapHabitFromDb = (dbHabit) => ({
+  id: dbHabit.id,
+  title: dbHabit.title,
+  frequency: dbHabit.frequency,
+  goalId: dbHabit.goal_id || '',
+  history: dbHabit.history || [],
+  createdAt: dbHabit.created_at,
+});
+
+const mapTaskFromDb = (dbTask) => ({
+  id: dbTask.id,
+  title: dbTask.title,
+  priority: dbTask.priority,
+  goalId: dbTask.goal_id || '',
+  date: dbTask.date,
+  isCompleted: dbTask.is_completed,
+  createdAt: dbTask.created_at,
+});
+
+const mapReviewFromDb = (dbReview) => ({
+  id: dbReview.id,
+  monthStr: dbReview.month_str,
+  updatedAt: dbReview.updated_at,
+  ...(dbReview.review_data || {}),
+});
+
 export const AppProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
-  const [users, setUsers] = useState([]);
+  const [authLoading, setAuthLoading] = useState(true);
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem('aura_theme');
     if (saved) return saved;
@@ -26,50 +62,112 @@ export const AppProvider = ({ children }) => {
   const [tasks, setTasks] = useState([]);
   const [monthlyReviews, setMonthlyReviews] = useState([]);
 
-  // Load registered users on startup
+  // Load user data on startup and auth state change
   useEffect(() => {
-    const storedUsers = localStorage.getItem('aura_users');
-    if (storedUsers) {
-      setUsers(JSON.parse(storedUsers));
-    }
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        const userObj = {
+          id: session.user.id,
+          email: session.user.email,
+          username: session.user.user_metadata?.username || session.user.email.split('@')[0],
+        };
+        setCurrentUser(userObj);
+        loadUserData(userObj.id).then(() => setAuthLoading(false));
+      } else {
+        setCurrentUser(null);
+        clearUserData();
+        setAuthLoading(false);
+      }
+    });
 
-    const activeUser = localStorage.getItem('aura_current_user');
-    if (activeUser) {
-      const parsedUser = JSON.parse(activeUser);
-      setCurrentUser(parsedUser);
-      loadUserData(parsedUser.username);
-    }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        const userObj = {
+          id: session.user.id,
+          email: session.user.email,
+          username: session.user.user_metadata?.username || session.user.email.split('@')[0],
+        };
+        setCurrentUser(userObj);
+        loadUserData(userObj.id);
+      } else {
+        setCurrentUser(null);
+        clearUserData();
+      }
+      setAuthLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  // Sync user specific data when logged in
-  const loadUserData = (username) => {
-    const userGoals = localStorage.getItem(`aura_goals_${username}`);
-    const userHabits = localStorage.getItem(`aura_habits_${username}`);
-    const userTasks = localStorage.getItem(`aura_tasks_${username}`);
-    const userReviews = localStorage.getItem(`aura_reviews_${username}`);
+  const loadUserData = async (userId) => {
+    try {
+      const [goalsRes, habitsRes, tasksRes, reviewsRes] = await Promise.all([
+        supabase.from('goals').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+        supabase.from('habits').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+        supabase.from('tasks').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+        supabase.from('monthly_reviews').select('*').eq('user_id', userId).order('updated_at', { ascending: false })
+      ]);
 
-    setGoals(userGoals ? JSON.parse(userGoals) : []);
-    setHabits(userHabits ? JSON.parse(userHabits) : []);
-    setTasks(userTasks ? JSON.parse(userTasks) : []);
-    setMonthlyReviews(userReviews ? JSON.parse(userReviews) : []);
+      if (!goalsRes.error) setGoals(goalsRes.data.map(mapGoalFromDb));
+      if (!habitsRes.error) setHabits(habitsRes.data.map(mapHabitFromDb));
+      if (!tasksRes.error) setTasks(tasksRes.data.map(mapTaskFromDb));
+      if (!reviewsRes.error) setMonthlyReviews(reviewsRes.data.map(mapReviewFromDb));
+    } catch (error) {
+      console.error('Error loading user data from Supabase:', error);
+    }
+  };
+
+  const clearUserData = () => {
+    setGoals([]);
+    setHabits([]);
+    setTasks([]);
+    setMonthlyReviews([]);
   };
 
   // Auth Operations
-  const login = (username, password) => {
-    const trimmedUser = username.trim().toLowerCase();
-    const user = users.find(u => u.username.toLowerCase() === trimmedUser && u.password === password);
-    if (!user) {
-      return { success: false, message: 'Invalid credentials. Usernames are case-insensitive.' };
+  const login = async (identifier, password) => {
+    const trimmedId = identifier.trim();
+    let emailToAuth = trimmedId;
+
+    if (!trimmedId.includes('@')) {
+      // Treat as username, look up in profiles
+      try {
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('username', trimmedId)
+          .maybeSingle();
+
+        if (profileError || !profile) {
+          return { success: false, message: 'Invalid credentials. User not found.' };
+        }
+        emailToAuth = profile.email;
+      } catch (err) {
+        return { success: false, message: 'Error checking user profiles.' };
+      }
     }
-    
-    setCurrentUser(user);
-    localStorage.setItem('aura_current_user', JSON.stringify(user));
-    loadUserData(user.username);
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: emailToAuth,
+      password: password,
+    });
+
+    if (error) {
+      return { success: false, message: error.message };
+    }
+
     return { success: true };
   };
 
-  const signup = (username, password) => {
+  const signup = async (email, username, password) => {
+    const trimmedEmail = email.trim();
     const trimmedUser = username.trim();
+
+    if (!trimmedEmail.includes('@')) {
+      return { success: false, message: 'Please enter a valid email address.' };
+    }
     if (trimmedUser.length < 3) {
       return { success: false, message: 'Username must be at least 3 characters.' };
     }
@@ -77,166 +175,296 @@ export const AppProvider = ({ children }) => {
       return { success: false, message: 'Password must be at least 4 characters.' };
     }
 
-    const exists = users.some(u => u.username.toLowerCase() === trimmedUser.toLowerCase());
-    if (exists) {
-      return { success: false, message: 'Username is already taken.' };
+    // Check if username is taken in public profiles
+    try {
+      const { data: existingUser } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('username', trimmedUser)
+        .maybeSingle();
+
+      if (existingUser) {
+        return { success: false, message: 'Username is already taken.' };
+      }
+    } catch (err) {
+      console.warn('Could not verify username uniqueness:', err);
     }
 
-    const newUser = { username: trimmedUser, password };
-    const updatedUsers = [...users, newUser];
-    setUsers(updatedUsers);
-    localStorage.setItem('aura_users', JSON.stringify(updatedUsers));
-    
-    // Automatically log in
-    setCurrentUser(newUser);
-    localStorage.setItem('aura_current_user', JSON.stringify(newUser));
-    setGoals([]);
-    setHabits([]);
-    setTasks([]);
-    setMonthlyReviews([]);
+    const { error } = await supabase.auth.signUp({
+      email: trimmedEmail,
+      password: password,
+      options: {
+        data: {
+          username: trimmedUser
+        }
+      }
+    });
+
+    if (error) {
+      return { success: false, message: error.message };
+    }
+
     return { success: true };
   };
 
-  const logout = () => {
-    setCurrentUser(null);
-    localStorage.removeItem('aura_current_user');
-    setGoals([]);
-    setHabits([]);
-    setTasks([]);
-    setMonthlyReviews([]);
-  };
-
-  // Helper function to sync with LocalStorage
-  const syncData = (key, data) => {
-    if (currentUser) {
-      localStorage.setItem(`aura_${key}_${currentUser.username}`, JSON.stringify(data));
-    }
+  const logout = async () => {
+    await supabase.auth.signOut();
   };
 
   // Goal Operations
-  const addGoal = (title, description, category) => {
-    const newGoal = {
-      id: 'g_' + Date.now(),
+  const addGoal = async (title, description, category) => {
+    if (!currentUser) return;
+    const newDbGoal = {
+      user_id: currentUser.id,
       title,
       description,
       category: category || 'General',
-      createdAt: new Date().toISOString()
     };
-    const updated = [newGoal, ...goals];
-    setGoals(updated);
-    syncData('goals', updated);
+
+    try {
+      const { data, error } = await supabase
+        .from('goals')
+        .insert([newDbGoal])
+        .select()
+        .single();
+
+      if (error) throw error;
+      if (data) {
+        setGoals(prev => [mapGoalFromDb(data), ...prev]);
+      }
+    } catch (error) {
+      console.error('Error adding goal:', error);
+    }
   };
 
-  const deleteGoal = (goalId) => {
-    const updatedGoals = goals.filter(g => g.id !== goalId);
-    setGoals(updatedGoals);
-    syncData('goals', updatedGoals);
+  const deleteGoal = async (goalId) => {
+    if (!currentUser) return;
+    try {
+      const { error } = await supabase
+        .from('goals')
+        .delete()
+        .eq('id', goalId);
 
-    // Unlink or delete associated tasks & habits
-    const updatedTasks = tasks.map(t => t.goalId === goalId ? { ...t, goalId: '' } : t);
-    setTasks(updatedTasks);
-    syncData('tasks', updatedTasks);
+      if (error) throw error;
 
-    const updatedHabits = habits.map(h => h.goalId === goalId ? { ...h, goalId: '' } : h);
-    setHabits(updatedHabits);
-    syncData('habits', updatedHabits);
+      setGoals(prev => prev.filter(g => g.id !== goalId));
+
+      // Cascade updates to tasks and habits in the database
+      await supabase
+        .from('tasks')
+        .update({ goal_id: null })
+        .eq('goal_id', goalId);
+      
+      setTasks(prev => prev.map(t => t.goalId === goalId ? { ...t, goalId: '' } : t));
+
+      await supabase
+        .from('habits')
+        .update({ goal_id: null })
+        .eq('goal_id', goalId);
+
+      setHabits(prev => prev.map(h => h.goalId === goalId ? { ...h, goalId: '' } : h));
+    } catch (error) {
+      console.error('Error deleting goal:', error);
+    }
   };
 
   // Habit Operations
-  const addHabit = (title, frequency, goalId) => {
-    const newHabit = {
-      id: 'h_' + Date.now(),
+  const addHabit = async (title, frequency, goalId) => {
+    if (!currentUser) return;
+    const newDbHabit = {
+      user_id: currentUser.id,
       title,
       frequency: frequency || 'Daily',
-      goalId: goalId || '',
-      createdAt: new Date().toISOString(),
-      history: [] // array of YYYY-MM-DD
+      goal_id: goalId || null,
+      history: []
     };
-    const updated = [newHabit, ...habits];
-    setHabits(updated);
-    syncData('habits', updated);
-  };
 
-  const toggleHabit = (habitId, dateStr) => {
-    const updated = habits.map(h => {
-      if (h.id === habitId) {
-        const index = h.history.indexOf(dateStr);
-        let newHistory = [...h.history];
-        if (index > -1) {
-          newHistory.splice(index, 1);
-        } else {
-          newHistory.push(dateStr);
-        }
-        return { ...h, history: newHistory };
+    try {
+      const { data, error } = await supabase
+        .from('habits')
+        .insert([newDbHabit])
+        .select()
+        .single();
+
+      if (error) throw error;
+      if (data) {
+        setHabits(prev => [mapHabitFromDb(data), ...prev]);
       }
-      return h;
-    });
-    setHabits(updated);
-    syncData('habits', updated);
+    } catch (error) {
+      console.error('Error adding habit:', error);
+    }
   };
 
-  const deleteHabit = (habitId) => {
-    const updated = habits.filter(h => h.id !== habitId);
-    setHabits(updated);
-    syncData('habits', updated);
+  const toggleHabit = async (habitId, dateStr) => {
+    if (!currentUser) return;
+    const habit = habits.find(h => h.id === habitId);
+    if (!habit) return;
+
+    let newHistory = [...habit.history];
+    const index = newHistory.indexOf(dateStr);
+    if (index > -1) {
+      newHistory.splice(index, 1);
+    } else {
+      newHistory.push(dateStr);
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('habits')
+        .update({ history: newHistory })
+        .eq('id', habitId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      if (data) {
+        setHabits(prev => prev.map(h => h.id === habitId ? mapHabitFromDb(data) : h));
+      }
+    } catch (error) {
+      console.error('Error toggling habit:', error);
+    }
+  };
+
+  const deleteHabit = async (habitId) => {
+    if (!currentUser) return;
+    try {
+      const { error } = await supabase
+        .from('habits')
+        .delete()
+        .eq('id', habitId);
+
+      if (error) throw error;
+      setHabits(prev => prev.filter(h => h.id !== habitId));
+    } catch (error) {
+      console.error('Error deleting habit:', error);
+    }
   };
 
   // Task Operations
-  const addTask = (title, priority, goalId, dateStr) => {
-    const newTask = {
-      id: 't_' + Date.now(),
+  const addTask = async (title, priority, goalId, dateStr) => {
+    if (!currentUser) return;
+    const newDbTask = {
+      user_id: currentUser.id,
       title,
       priority: priority || 'medium',
-      goalId: goalId || '',
+      goal_id: goalId || null,
       date: dateStr || new Date().toISOString().split('T')[0],
-      isCompleted: false,
-      createdAt: new Date().toISOString()
+      is_completed: false
     };
-    const updated = [newTask, ...tasks];
-    setTasks(updated);
-    syncData('tasks', updated);
+
+    try {
+      const { data, error } = await supabase
+        .from('tasks')
+        .insert([newDbTask])
+        .select()
+        .single();
+
+      if (error) throw error;
+      if (data) {
+        setTasks(prev => [mapTaskFromDb(data), ...prev]);
+      }
+    } catch (error) {
+      console.error('Error adding task:', error);
+    }
   };
 
-  const toggleTask = (taskId) => {
-    const updated = tasks.map(t => t.id === taskId ? { ...t, isCompleted: !t.isCompleted } : t);
-    setTasks(updated);
-    syncData('tasks', updated);
+  const toggleTask = async (taskId) => {
+    if (!currentUser) return;
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('tasks')
+        .update({ is_completed: !task.isCompleted })
+        .eq('id', taskId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      if (data) {
+        setTasks(prev => prev.map(t => t.id === taskId ? mapTaskFromDb(data) : t));
+      }
+    } catch (error) {
+      console.error('Error toggling task:', error);
+    }
   };
 
-  const deleteTask = (taskId) => {
-    const updated = tasks.filter(t => t.id !== taskId);
-    setTasks(updated);
-    syncData('tasks', updated);
+  const deleteTask = async (taskId) => {
+    if (!currentUser) return;
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', taskId);
+
+      if (error) throw error;
+      setTasks(prev => prev.filter(t => t.id !== taskId));
+    } catch (error) {
+      console.error('Error deleting task:', error);
+    }
   };
 
   // Monthly Review Operations
-  const saveMonthlyReview = (monthStr, reviewData) => {
-    const updated = [...monthlyReviews];
-    const existingIndex = updated.findIndex(r => r.monthStr === monthStr);
-    const newReview = {
-      id: existingIndex > -1 ? updated[existingIndex].id : 'rev_' + Date.now(),
-      monthStr,
-      ...reviewData,
-      updatedAt: new Date().toISOString()
-    };
+  const saveMonthlyReview = async (monthStr, reviewData) => {
+    if (!currentUser) return;
+    const existing = monthlyReviews.find(r => r.monthStr === monthStr);
+    
+    try {
+      if (existing) {
+        const { data, error } = await supabase
+          .from('monthly_reviews')
+          .update({
+            review_data: reviewData,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existing.id)
+          .select()
+          .single();
 
-    if (existingIndex > -1) {
-      updated[existingIndex] = newReview;
-    } else {
-      updated.push(newReview);
+        if (error) throw error;
+        if (data) {
+          setMonthlyReviews(prev => prev.map(r => r.id === existing.id ? mapReviewFromDb(data) : r));
+        }
+      } else {
+        const newDbReview = {
+          user_id: currentUser.id,
+          month_str: monthStr,
+          review_data: reviewData
+        };
+
+        const { data, error } = await supabase
+          .from('monthly_reviews')
+          .insert([newDbReview])
+          .select()
+          .single();
+
+        if (error) throw error;
+        if (data) {
+          setMonthlyReviews(prev => [...prev, mapReviewFromDb(data)]);
+        }
+      }
+    } catch (error) {
+      console.error('Error saving monthly review:', error);
     }
-
-    setMonthlyReviews(updated);
-    syncData('reviews', updated);
   };
 
-  const deleteMonthlyReview = (reviewId) => {
-    const updated = monthlyReviews.filter(r => r.id !== reviewId);
-    setMonthlyReviews(updated);
-    syncData('reviews', updated);
+  const deleteMonthlyReview = async (reviewId) => {
+    if (!currentUser) return;
+    try {
+      const { error } = await supabase
+        .from('monthly_reviews')
+        .delete()
+        .eq('id', reviewId);
+
+      if (error) throw error;
+      setMonthlyReviews(prev => prev.filter(r => r.id !== reviewId));
+    } catch (error) {
+      console.error('Error deleting monthly review:', error);
+    }
   };
 
-  // Streak Calculation Helpers
+  // Streak Calculation Helpers (Client Side Only)
   const getHabitStreaks = (habit) => {
     if (!habit.history || habit.history.length === 0) {
       return { current: 0, longest: 0 };
@@ -272,7 +500,6 @@ export const AppProvider = ({ children }) => {
     // Calculate Longest Streak
     let longestStreak = 0;
     let tempStreak = 0;
-    // Sort ascending for longest streak detection
     const ascDates = [...new Set(habit.history)].sort((a, b) => new Date(a) - new Date(b));
     
     if (ascDates.length > 0) {
@@ -300,6 +527,7 @@ export const AppProvider = ({ children }) => {
   return (
     <AppContext.Provider value={{
       currentUser,
+      authLoading,
       goals,
       habits,
       tasks,

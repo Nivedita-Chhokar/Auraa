@@ -10,8 +10,16 @@ import { MonthlyReview } from './components/Dashboard/MonthlyReview';
 import './App.css';
 
 function MainAppContent() {
-  const { currentUser } = useApp();
+  const { currentUser, authLoading } = useApp();
   const [activeTab, setActiveTab] = useState('habits'); // 'habits', 'tasks', 'goals', 'reports', 'review'
+
+  if (authLoading) {
+    return (
+      <div className="auth-loading-screen">
+        <div className="auth-loading-spinner"></div>
+      </div>
+    );
+  }
 
   if (!currentUser) {
     return <LandingPage />;
